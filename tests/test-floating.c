@@ -1,5 +1,5 @@
 /*
- * test-floating.c - Source for TestFloatingWithSinkFunc and TestFloatingWithoutSinkFunc
+ * test-floating.c - Source for TestFloating
  * Copyright (C) 2010 Collabora Ltd.
  *
  * This library is free software; you can redistribute it and/or
@@ -19,55 +19,14 @@
 
 #include "test-floating.h"
 
-/* TestFloatingWithSinkFunc */
+/* TestFloating */
 
-G_DEFINE_TYPE(TestFloatingWithSinkFunc, test_floating_with_sink_func, G_TYPE_INITIALLY_UNOWNED)
-
-static void
-test_floating_with_sink_func_finalize (GObject *gobject)
-{
-  TestFloatingWithSinkFunc *object = TEST_FLOATING_WITH_SINK_FUNC (gobject);
-
-  if (g_object_is_floating (object))
-    {
-      g_warning ("A floating object was finalized. This means that someone\n"
-		 "called g_object_unref() on an object that had only a floating\n"
-		 "reference; the initial floating reference is not owned by anyone\n"
-		 "and must be removed with g_object_ref_sink().");
-    }
-  
-  G_OBJECT_CLASS (test_floating_with_sink_func_parent_class)->finalize (gobject);
-}
+G_DEFINE_TYPE(TestFloating, test_floating, G_TYPE_INITIALLY_UNOWNED)
 
 static void
-test_floating_with_sink_func_class_init (TestFloatingWithSinkFuncClass *klass)
+test_floating_finalize (GObject *gobject)
 {
-  GObjectClass *gobject_class = G_OBJECT_CLASS (klass);
-
-  gobject_class->finalize = test_floating_with_sink_func_finalize;
-}
-
-static void
-test_floating_with_sink_func_init (TestFloatingWithSinkFunc *self)
-{
-}
-
-void
-sink_test_floating_with_sink_func (GObject *object)
-{
-    if (g_object_is_floating(object)) {
-	    g_object_ref_sink(object);
-    }
-}
-
-/* TestFloatingWithoutSinkFunc */
-
-G_DEFINE_TYPE(TestFloatingWithoutSinkFunc, test_floating_without_sink_func, G_TYPE_INITIALLY_UNOWNED)
-
-static void
-test_floating_without_sink_func_finalize (GObject *gobject)
-{
-  TestFloatingWithoutSinkFunc *object = TEST_FLOATING_WITHOUT_SINK_FUNC (gobject);
+  TestFloating *object = TEST_FLOATING (gobject);
 
   if (g_object_is_floating (object))
     {
@@ -77,19 +36,85 @@ test_floating_without_sink_func_finalize (GObject *gobject)
 		 "and must be removed without g_object_ref_sink().");
     }
 
-  G_OBJECT_CLASS (test_floating_without_sink_func_parent_class)->finalize (gobject);
+  G_OBJECT_CLASS (test_floating_parent_class)->finalize (gobject);
 }
 
 static void
-test_floating_without_sink_func_class_init (TestFloatingWithoutSinkFuncClass *klass)
+test_floating_class_init (TestFloatingClass *klass)
 {
   GObjectClass *gobject_class = G_OBJECT_CLASS (klass);
 
-  gobject_class->finalize = test_floating_without_sink_func_finalize;
+  gobject_class->finalize = test_floating_finalize;
 }
 
 static void
-test_floating_without_sink_func_init (TestFloatingWithoutSinkFunc *self)
+test_floating_init (TestFloating *self)
 {
 }
 
+/* TestOwnedByLibrary */
+
+G_DEFINE_TYPE(TestOwnedByLibrary, test_owned_by_library, G_TYPE_OBJECT)
+
+static GSList *obl_instance_list = NULL;
+
+static void
+test_owned_by_library_class_init (TestOwnedByLibraryClass *klass)
+{
+}
+
+static void
+test_owned_by_library_init (TestOwnedByLibrary *self)
+{
+    g_object_ref (self);
+    obl_instance_list = g_slist_prepend (obl_instance_list, self);
+}
+
+void
+test_owned_by_library_release (TestOwnedByLibrary *self)
+{
+    obl_instance_list = g_slist_remove (obl_instance_list, self);
+    g_object_unref (self);
+}
+
+GSList *
+test_owned_by_library_get_instance_list (void)
+{
+    return obl_instance_list;
+}
+
+/* TestFloatingAndSunk
+ * This object is mimicking the GtkWindow behaviour, ie a GInitiallyUnowned subclass
+ * whose floating reference has already been sunk when g_object_new() returns it.
+ * The reference is already sunk because the instance is already owned by the instance
+ * list.
+ */
+
+G_DEFINE_TYPE(TestFloatingAndSunk, test_floating_and_sunk, G_TYPE_INITIALLY_UNOWNED)
+
+static GSList *fas_instance_list = NULL;
+
+static void
+test_floating_and_sunk_class_init (TestFloatingAndSunkClass *klass)
+{
+}
+
+static void
+test_floating_and_sunk_init (TestFloatingAndSunk *self)
+{
+    g_object_ref_sink (self);
+    fas_instance_list = g_slist_prepend (fas_instance_list, self);
+}
+
+void
+test_floating_and_sunk_release (TestFloatingAndSunk *self)
+{
+    fas_instance_list = g_slist_remove (fas_instance_list, self);
+    g_object_unref (self);
+}
+
+GSList *
+test_floating_and_sunk_get_instance_list (void)
+{
+    return fas_instance_list;
+}

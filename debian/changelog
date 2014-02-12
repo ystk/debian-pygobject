@@ -1,3 +1,460 @@
+pygobject (3.2.2-2) unstable; urgency=low
+
+  [ Josselin Mouette ]
+  * Enable again gtk3 on m68k.
+  * Add missing dependency python3-gi-cairo → python3-gi.
+    Closes: #673213.
+
+  [ Michael Biebl ]
+  * Stop using a doc symlink for the dbg package. The space savings are
+    negligible and they are prone to cause problems. In case of
+    python-gobject-dbg, which was converted to a transitional package, the
+    symlink was mistakenly converted to a real directory which isn't handled
+    nicely by dpkg. Closes: #700779
+  * Move transitional packages into section oldlibs with priority extra.
+
+ -- Michael Biebl <biebl@debian.org>  Thu, 21 Feb 2013 18:23:46 +0100
+
+pygobject (3.2.2-1) unstable; urgency=low
+
+  * New upstream bug fix release.
+
+ -- Martin Pitt <mpitt@debian.org>  Tue, 15 May 2012 15:29:38 +0200
+
+pygobject (3.2.1-1) unstable; urgency=low
+
+  * New upstream bug fix release.
+    - GTK overrides: Add missing keyword arguments (Closes: #667057)
+
+ -- Martin Pitt <mpitt@debian.org>  Thu, 10 May 2012 14:27:02 -0700
+
+pygobject (3.2.0-3) unstable; urgency=low
+
+  * debian/control.in, debian/rules: Build a python3-gi-cairo package, now
+    that py3cairo is packaged in Debian. (LP: #879405)
+
+ -- Martin Pitt <mpitt@debian.org>  Tue, 10 Apr 2012 13:10:34 +0200
+
+pygobject (3.2.0-2) unstable; urgency=low
+
+  * Upload to unstable.
+  * debian/watch: Switch back to only watching for stable versions.
+  * debian/control.in: Set Vcs-* back to unstable branch.
+  * debian/copyright: Move to copyright 1.0 format.
+  * debian/control.in: Bump Standards-Version to 3.9.3.
+
+ -- Martin Pitt <mpitt@debian.org>  Mon, 02 Apr 2012 08:18:17 +0200
+
+pygobject (3.2.0-1) experimental; urgency=low
+
+  * New upstream bug fix release, to fix two regressions in 3.1.92.
+
+ -- Martin Pitt <mpitt@debian.org>  Mon, 26 Mar 2012 13:50:26 +0200
+
+pygobject (3.1.92-1) experimental; urgency=low
+
+  * New upstream release.
+    - Fix Gtk override API for tree models to send out only one signal after
+      the data is set. (LP: #939450)
+
+ -- Martin Pitt <mpitt@debian.org>  Mon, 19 Mar 2012 17:29:07 +0100
+
+pygobject (3.1.1-1) experimental; urgency=low
+
+  * New upstream bug fix release.
+  * debian/control.in: Bump libglib2.0-dev build dependency as per
+    configure.ac.
+  * Drop 00git_gtkbuilder-signals.patch, 00git_pygspawn_error_check.patch:
+    Included upstream.
+  * Drop glib_2.30.patch: Not necessary any more, we have a recent enough
+    glib in experimental now.
+  * debian/control.in: Have python-gi-dev depend on python-gi, not
+    the transitional python-gobject.
+  * debian/watch: Watch for odd-numbered minor versions as well, as we are
+    using these for GNOME 3.2.
+  * debian/control.in: Update Vcs-* for experimental branch.
+
+ -- Martin Pitt <mpitt@debian.org>  Tue, 13 Mar 2012 15:22:44 +0100
+
+pygobject (3.1.0-2) unstable; urgency=low
+
+  * Add glib_2.30.patch: Partially revert commit ee62df4 to drop the usage of
+    g_value_*_schar. This was introduced in glib 2.31 only. (Closes: #659184)
+  * Add 00git_pygspawn_error_check.patch: Fix crash in pygspawn() when the
+    argv or envp arguments are not proper sequences. Backported from upstream
+    git head.
+  * Add 00git_gtkbuilder-signals.patch: Fix GtkBuilder signal connection
+    'after' logic. Backported from upstream git head. (LP: #925676)
+
+ -- Martin Pitt <mpitt@debian.org>  Thu, 09 Feb 2012 07:01:44 +0100
+
+pygobject (3.1.0-1) unstable; urgency=low
+
+  * New upstream release. No new features or code reorg, just a lot of crash
+    and introspectability fixes, and well covered by test cases. This works
+    fine with GNOME 3.2.
+  * Drop all patches, all upstream now.
+
+ -- Martin Pitt <mpitt@debian.org>  Wed, 08 Feb 2012 07:28:19 +0100
+
+pygobject (3.0.3-3) unstable; urgency=low
+
+  * debian/control.in: Set python-gobject-dbg section/priority to debug/extra,
+    according to to archive overrides.
+  * Add 00git_ghashtable_gerror_callback_args.patch: Support GHashTable and
+    GError as callback/closure arguments. Backported from upstream git head,
+    but without the test cases, as they require an addition to
+    gobject-introspection. (LP: #904783)
+  * Add 00git_gerror_transfer_none.patch: Respect transfer-type when
+    demarshalling GErrors. The marshaller previously ignored "transfer full"
+    on GError* arguments, causing crashes due to double-freeing them.
+    Backported from upstream git head.
+
+ -- Martin Pitt <mpitt@debian.org>  Wed, 25 Jan 2012 07:19:31 +0100
+
+pygobject (3.0.3-2) unstable; urgency=medium
+
+  * Urgency medium as the previous release with the regression already made it
+    into testing and is causing quite a few unexpected breakages.
+  * Add 01_revert_tree_model_unicode_conversion.patch: Revert "Convert all
+    strings to utf-8 encoding when retrieving from TreeModel" change from
+    previous release. This changes existing behaviour (model values being str
+    instead of unicode) and also makes tree model behaviour incompatible to
+    the rest of Gtk behaviour (which always returns UTF-8 encoded str objects,
+    not unicode). The original bug description was a bug in the test case
+    code, you cannot mix str and unicode objects in interpolation.
+    (LP: #905602)
+
+ -- Martin Pitt <mpitt@debian.org>  Fri, 06 Jan 2012 16:38:51 +0100
+
+pygobject (3.0.3-1) unstable; urgency=low
+
+  * debian/watch: Switch to xz tarballs, upstream now only releases those.
+  * New upstream bug fix release.
+  * Drop 00git_marshal_gvariant_arrays.patch, included upstream.
+
+ -- Martin Pitt <mpitt@debian.org>  Thu, 15 Dec 2011 07:31:30 +0100
+
+pygobject (3.0.2-4) unstable; urgency=low
+
+  [ Sjoerd Simons ]
+  * debian/control.in: Make the Vcs-* tags refer to the unstable repos
+
+  [ Martin Pitt ]
+  * debian/control.in: Drop gir1.2-gtk-3.0 build dependency on m68k, as that
+    arch does not yet have GTK-3 yet. It is only needed for the testsuite
+    anyway. As per request from Thorsten Glaser.
+
+  [ Josselin Mouette ]
+  * Bump dependencies on gir1.2-glib-2.0 according to upstream 
+    requirements. Closes: #649611.
+  * Rename packages to python-gi*.
+  * Remove dependencies on python-gobject-2*. The dependency will be the 
+    other way round so that the old pygobject-2 can be dropped 
+    eventually.
+  * Add appropriate Breaks/Replaces/Conflicts/Provides.
+  * Add a missing python-gi-cairo → python-gi dependency.
+  * Drop a pair of unneeded Recommends/Suggests.
+  * Add transitional python-gobject/python-gobject-dev packages that 
+    depend on both python-gi* and python-gobject-2*.
+  * Same for python-gobject-dbg.
+  * Break python-nautilus <= the current version which is broken by 
+    pygobject 3.x. Closes: #649861. The only other affected package is 
+    totem-plugins and the issue is not severe enough to warrant blocking 
+    the ongoing transitions.
+
+ -- Josselin Mouette <joss@debian.org>  Thu, 24 Nov 2011 18:43:28 +0100
+
+pygobject (3.0.2-3) unstable; urgency=low
+
+  * Upload to unstable
+
+ -- Sjoerd Simons <sjoerd@debian.org>  Sun, 20 Nov 2011 13:02:33 +0000
+
+pygobject (3.0.2-2) experimental; urgency=low
+
+  * debian/control.in: Add locales build dependency, to ensure that the test
+    suite's localedef command can succeed.
+  * debian/control.in: Bump g-i build deps to >= 1.31.0, as our test suite
+    needs methods from that version.
+  * Add 00git_marshal_gvariant_arrays.patch: Fix marshaling of arrays of
+    GVariants. Thanks Mikkel Kamstrup Erlandsen! (LP: #855402)
+
+ -- Martin Pitt <mpitt@debian.org>  Thu, 27 Oct 2011 07:25:09 +0200
+
+pygobject (3.0.2-1) experimental; urgency=low
+
+  * New upstream release:
+    - Allow GBoxed types as property. (LP: #877397)
+    - When converting an object with transfer none, make sure the wrapper owns
+      a ref. (LP: #874299)
+    - Gdk overrides: Unbreak for Gdk-2.0. (LP: #875399)
+    - Do union member checks for unions that are parameters.
+    - Fix "Returns: (skip)" method calls without (out) arguments.
+
+ -- Martin Pitt <mpitt@debian.org>  Sun, 23 Oct 2011 12:54:30 +0200
+
+pygobject (3.0.1-1) experimental; urgency=low
+
+  * New upstream release.
+  * Drop revert-refcount-fix.patch. Fixed properly with new upstream version.
+  * debian/rules: Drop cleanup of old static bindings leftovers, fixed
+    upstream.
+  * debian/control.in: Bump gobject-introspection build dependency as per
+    upstream configure.ac.
+  * debian/control.in: Drop unused cdbs build dependency.
+  * debian/control.in: Fix p-g-dev → p-g dependency to be binNMUable, thanks
+    lintian.
+
+ -- Martin Pitt <mpitt@debian.org>  Fri, 21 Oct 2011 09:43:49 +0200
+
+pygobject (2.90.3-2) experimental; urgency=low
+
+  * debian/control.in, debian/rules: Bring back python-gobject-dev package, to
+    ship the include and pkg-config file. This is still needed by e. g.
+    libpeas. Depend on python-gobject-2-dev to retain backwards compatibility,
+    similar to the other binary packages.
+
+ -- Martin Pitt <mpitt@debian.org>  Tue, 06 Sep 2011 13:54:22 +0200
+
+pygobject (2.90.3-1) experimental; urgency=low
+
+  * New upstream release.
+
+ -- Martin Pitt <mpitt@debian.org>  Fri, 02 Sep 2011 07:58:48 +0200
+
+pygobject (2.90.2-2) experimental; urgency=low
+
+  * Add revert-refcount-fix.patch: Revert
+    http://git.gnome.org/browse/pygobject/commit/?id=7bc4122897 as a
+    workaround for segfaults when creating custom widgets through the GObject
+    constructor (such as through GtkBuilder). This works around
+    https://bugzilla.gnome.org/show_bug.cgi?id=657403. This patch was reverted
+    in the 2-28 branch as well, so reverting it here is no regression from
+    2.28. (LP: #834168)
+
+ -- Martin Pitt <mpitt@debian.org>  Tue, 30 Aug 2011 08:30:31 +0200
+
+pygobject (2.90.2-1) experimental; urgency=low
+
+  * New upstream bug fix release.
+  * debian/copyright: Update to current licenses/copyrights, and convert to
+    DEP-5.
+
+ -- Martin Pitt <mpitt@debian.org>  Fri, 19 Aug 2011 10:44:05 +0200
+
+pygobject (2.90.1-1) experimental; urgency=low
+
+  * debian/control.in: Update Vcs-* for experimental branch.
+  * New upstream release:
+    - New rewritten invoker is twice as fast and easier to extend and debug
+    - Complete break from static bindings so we may improve the core without
+      breaking legacy APIs
+    - Better type handling
+    - Parallel installable with PyGObject 2.28 for legacy binding support
+      (2.28 must be compiled with –disable-introspection)
+    - Fixed object array handling
+    - Added more overrides for PyGTK API emulation
+    - Support for function calling using keyword arguments
+    - GObject and GLib symbols can now have overrides
+    - All static bit removed or made private
+    - GVariants now work from callback returns
+    - Note that this now enforces a consistent move to the GI bindings. I. e.
+      you need to change all "import gobject" statements into "from
+      gi.repository import GObject", same for glib.
+   * Drop debian/patches/00git_*.patch, all upstream.
+   * Drop 20_deprecated_spam.patch, obsolete.
+   * debian/control.in: The static bindings (glib, gobject, pygtk, gtk, etc.)
+     are deprecated and are now shipped in the separate packages
+     python-gobject-2{,-dbg}. Add a dependency to these for the time being to
+     not break backwards compatibility. Once all packages have been ported to
+     use the GI bindings, this dependency and pygobject-2 will be dropped.
+   * debian/control.in: Update package descriptions to point out that this is
+     now GI only.
+   * debian/control.in, debian/rules: Drop python-gobject-dev package. It's
+     not relevant any more for this version, and now built from the
+     pygobject-2 source package.
+  * debian/rules: Bump shlibs.
+  * Drop debian/python-gobject.examples: These are for the old static
+    bindings. http://git.gnome.org/browse/pygobject/tree/demos is an actually
+    useful and comprehensive example, but not shipped in the release tarballs.
+  * debian/rules: Drop obsolete permission fixing, that only applied to the
+    examples.
+
+ -- Martin Pitt <mpitt@debian.org>  Wed, 17 Aug 2011 12:01:54 +0200
+
+pygobject (2.28.6-4) unstable; urgency=low
+
+  * debian/rules: Create shlibs for python3 packages, too.
+  * debian/rules: Call dh_strip on python3-gobject, too.
+
+ -- Martin Pitt <mpitt@debian.org>  Thu, 14 Jul 2011 12:04:44 +0200
+
+pygobject (2.28.6-3) unstable; urgency=low
+
+  * Cherrypick some fixes from pygobject-2-28 upstream branch:
+    - 00git_test_case_hang.patch: Fix hang in test suite when
+      TestGDBusClient.test_native_calls_async() test case fails.
+    - 00git_messagebox_type.patch: Fix MessageBox so it correctly handles
+      the type constructor param.
+    - 00git_python3_build.patch, 00git_python3-maketrans.patch: Python 3 fixes.
+    - 00git_gio_test.patch: Port test_properties from static gio to GI Gio, so
+      that the tests will also work with Python 3.
+  * debian/control.in, debian/rules: Add and build python3-gobject and
+    python3-gobject-dbg packages. Until we get py3cairo packaged in Debian (in
+    the works), we need to build the python3 flavour with --disable-cairo, and
+    apply some workarounds in debian/rules (see the "FIXME"s); these will
+    disappear again with py3cairo.
+
+ -- Martin Pitt <mpitt@debian.org>  Thu, 14 Jul 2011 11:17:05 +0200
+
+pygobject (2.28.6-2) unstable; urgency=low
+
+  * Cherrypick some fixes from pygobject-2-28 upstream branch:
+    - Add 00git_enum_properties.patch: Add support for enums in
+      gobject.property
+    - Add 00git_cairo_init.patch: Correctly initialize the _gi_cairo_functions
+      array to be zero filled
+    - 00git_textiter_crash.patch: Fix crash in Gtk.TextIter overrides
+
+ -- Martin Pitt <mpitt@debian.org>  Fri, 08 Jul 2011 12:01:44 +0200
+
+pygobject (2.28.6-1) unstable; urgency=low
+
+  * New upstream bug fix release.
+  * Drop 21_fix_symbol_names_to_be_locale_independent.patch, fixed upstream.
+  * debian/watch: Fix syntax to actually catch current versions.
+  * debian/watch: Move to .bz2 tarballs, upstream stopped publishing gz.
+
+ -- Martin Pitt <mpitt@debian.org>  Tue, 14 Jun 2011 11:05:13 +0200
+
+pygobject (2.28.4-1) unstable; urgency=low
+
+  [ Josselin Mouette ]
+  * Drop ${python:Provides} for python-gobject-cairo (it depends on 
+    python-cairo).
+
+  [ Laurent Bigonville ]
+  * New upstream release.
+    - Revert ABI break (Closes: #625703)
+  * debian/control.in: Bump Standards-Version to 3.9.2 (no further changes)
+  * debian/patches/21_fix_symbol_names_to_be_locale_independent.patch:
+    Fix case conversion issue (Taken from upstream)
+
+ -- Laurent Bigonville <bigon@debian.org>  Fri, 06 May 2011 14:05:14 +0200
+
+pygobject (2.28.3-3) unstable; urgency=low
+
+  * Rebuild for python 2.7 transition, no source changes.
+
+ -- Laurent Bigonville <bigon@debian.org>  Tue, 19 Apr 2011 21:38:48 +0200
+
+pygobject (2.28.3-2) unstable; urgency=low
+
+  * Upload to unstable
+
+ -- Laurent Bigonville <bigon@debian.org>  Sun, 10 Apr 2011 23:41:56 +0200
+
+pygobject (2.28.3-1) experimental; urgency=low
+
+  [ Laurent Bigonville ]
+  * New upstream release (Closes: #619338).
+  * debian/control.in:
+    - Bump cdbs and python-all-dev build-dependencies
+    - Drop XB-Python-Version: ${python:Versions}
+    - Make python-gobject-dbg Depends against ${python:Depends}
+      instead of python-dbg
+    - Build-dependends against dh-autoreconf
+    - Add xauth, gir1.2-glib-2.0, gir1.2-gtk-3.0 and gir1.2-freedesktop
+      to build-depends, needed by the tests
+  * Drop d/p/40_revert_libpython_link.patch,
+    d/p/30_[gi-overrides]-fix-exception-block-so-it-works-in-Python-2.5.patch:
+    Applied upstream
+  * Drop debian/patches/99_autoreconf.patch: Not needed anymore
+  * debian/rules: Call dh_autoreconf{_clean} instead of handeling this by hand,
+    should Closes: #558530
+
+  [ Martin Pitt ]
+  * debian/rules: Move from pysupport (which is being deprecated) to
+    dh_python2. Drop python-support build dependency.
+    (Closes: #614764)
+  * debian/rules: Install a library search path for a pysupport compatible
+    gtk-2.0 directory, to avoid instantly breaking all reverse dependencies.
+    This needs to stay until they get converted to dh_python2.
+  * Fix test suite calls during package build (Closes: #619257):
+    - debian/rules: Copy Python files from our modules into build tree, so
+      that the tests actually find them. In Python you can't have Python
+      modules and compiled extensions which belong to the same import in
+      different directories. (Unfortunately it's hard to upstream this, so
+      keep it as a Debian specific hack for now.)
+    - debian/rules: Run the tests under xvfb so that the Gdk/Gtk ones can
+      succeed.
+    - debian/rules: Disable fakeroot for the tests by unsetting $LD_PRELOAD.
+      Otherwise the tests try to connect to root's session D-BUS.
+    - debian/control.in: Add build dependencies: xvfb (as we now use it in
+      debian/rules), dbus-x11 (as the test suite uses dbus-launch), and
+      python-apt-dbg/python-cairo-dbg, so that the test cases for the debug
+      builds have all dependencies met.
+
+ -- Laurent Bigonville <bigon@debian.org>  Thu, 24 Mar 2011 16:05:06 +0100
+
+pygobject (2.28.0-2) experimental; urgency=low
+
+  * Add debian/patches/40_revert_libpython_link.patch: Do not link against
+    libpython, taken from upstream (Closes: #618749)
+  * Add debian/patches/99_autoreconf.patch: Run autoreconf
+
+ -- Laurent Bigonville <bigon@debian.org>  Mon, 21 Mar 2011 14:15:03 +0100
+
+pygobject (2.28.0-1) experimental; urgency=low
+
+  * New upstream stable release:
+    - Fix glib.main_context_default() causes immediate segfault
+      (Closes: #580791)
+    - Fix import error with GTK3 gir binding (Closes: #618557)
+  * debian/control.in:
+    - Bump python-cairo-dev and gobject-introspection build-dependencies
+    - Bump python-gobject-dev dependency against libglib2.0-dev
+    - Drop Build-Conflicts against python2.3-dev (<< 2.3.5)
+    - Drop C/R/P against python-gobject-doc
+    - Drop Conflicts against python-gtk2{-dev,} (<< 2.10)
+  * debian/rules: Adjust installation path for cairo binding
+  * debian/copyright: Update copyright file
+  * debian/rules: Remove explicit calls to quilt as we are using '3.0 (quilt)'
+    format
+  * d/p/30_[gi-overrides]-fix-exception-block-so-it-works-in-Python-2.5.patch:
+    Make exception compatible with python 2.5 (taken from upstream)
+
+ -- Laurent Bigonville <bigon@debian.org>  Wed, 16 Mar 2011 13:28:29 +0100
+
+pygobject (2.27.0-2) experimental; urgency=low
+
+  * debian/control.in:
+    - Depend on gir1.2-glib-2.0 instead of in gir1.0-glib-2.0.
+    - Build depend on libglib2.0-dev >= 2.24. Closes: #609277.
+
+ -- Emilio Pozuelo Monfort <pochu@debian.org>  Sat, 08 Jan 2011 02:34:41 +0000
+
+pygobject (2.27.0-1) experimental; urgency=low
+
+  * New upstream release.
+  * debian/control.in:
+    - Bump Standards-Version to 3.9.1 (no further changes)
+    - Build-depend on libgirepository1.0-dev, libcairo2-dev, python-cairo-dev
+      and gobject-introspection
+    - python-gobject: Conflicts/Replaces/Provides python-gi
+    - python-gobject: Add dependency against gir1.0-glib-2.0
+    - Add python-gobject-cairo package and make python-gobject Recommends it
+    - Bump minimal python version to 2.5.2
+  * debian/rules:
+    - Don't need --enable-pygi, it is now merged
+    - Install files for python-gobject-cairo
+  * Drop debian/patches/03_maintainer_mode.patch: Merged upstream
+  * Drop debian/patches/90_autofoo.patch: Not needed anymore
+  * debian/watch: Bump version to 3
+
+ -- Laurent Bigonville <bigon@debian.org>  Wed, 24 Nov 2010 22:10:22 +0100
+
 pygobject (2.21.4+is.2.21.3-1) unstable; urgency=low
 
   * Downgrade to version 2.21.3 since PyGI is absolutely not ready to 

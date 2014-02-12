@@ -3,6 +3,8 @@
 include /usr/share/gnome-pkg-tools/1/rules/uploaders.mk
 -include /usr/share/gnome-pkg-tools/1/rules/gnome-get-source.mk
 
+include /usr/share/python/python.mk
+
 CFLAGS += -Wall -g -O$(if $(findstring noopt,$(DEB_BUILD_OPTIONS)),0,2)
 
 DEB_HOST_GNU_TYPE   ?= $(shell dpkg-architecture -qDEB_HOST_GNU_TYPE)
@@ -13,7 +15,6 @@ export echo=/bin/echo
 configure_flags += \
 		--prefix=/usr \
 		--enable-thread \
-                --enable-pygi \
 		--build=$(DEB_BUILD_GNU_TYPE) \
 		--disable-maintainer-mode
 
@@ -23,37 +24,14 @@ endif
 
 PYDEFAULTVER := $(shell pyversions --default --version)
 PYVERS := $(shell pyversions --requested --version debian/control)
-PYVERS := $(filter-out $(PYDEFAULTVER), $(PYVERS)) $(PYDEFAULTVER)
-
-# how to call quilt
-PATCH_DIR := $(CURDIR)/debian/patches
-QUILT := QUILT_PATCHES=$(PATCH_DIR) quilt --quiltrc /dev/null
+PYVERS := $(filter-out $(PYDEFAULTVER), $(PYVERS)) $(PYDEFAULTVER) $(shell py3versions --supported --version)
 
 patch-stamp:
 	dh_testdir
-	# apply patches
-	$(QUILT) push -a || test $$? = 2
-	# backup the original files to restore them in the clean target
-	[ ! -r config.sub ]   || \
-	    (cp config.sub   config.sub.orig   && \
-	     cp /usr/share/misc/config.sub   config.sub)
-	[ ! -r config.guess ] || \
-	    (cp config.guess config.guess.orig && \
-	     cp /usr/share/misc/config.guess config.guess)
+	dh_autoreconf
 	touch $@
 
 patch: patch-stamp
-
-unpatch:
-	rm -f patch-stamp
-	# restore files from backup (before unpatching)
-	[ ! -r config.sub.orig ]   || \
-	    cp config.sub.orig   config.sub
-	[ ! -r config.guess.orig ]   || \
-	    cp config.guess.orig config.guess
-	# unapply patches, if any
-	$(QUILT) pop -a || test $$? = 2
-	rm -rf .pc
 
 build-%/configure-stamp: patch-stamp
 	dh_testdir
@@ -73,38 +51,86 @@ dbg-build-%/configure-stamp: patch-stamp
 
 build-%/build-stamp: build-%/configure-stamp
 	dh_testdir
-	PYTHON=/usr/bin/python$* $(MAKE) -C build-$* pyexecdir=/usr/lib/pymodules/python$*
+	PYTHON=/usr/bin/python$* $(MAKE) -C build-$* pyexecdir=$(call py_libdir_sh, $*)
 	touch $@
 
 dbg-build-%/build-stamp: dbg-build-%/configure-stamp
 	dh_testdir
-	PYTHON=/usr/bin/python$*-dbg $(MAKE) -C dbg-build-$*
+	PYTHON=/usr/bin/python$*-dbg $(MAKE) -C dbg-build-$* pyexecdir=$(call py_libdir_sh, $*)
 	touch $@
 
 build: $(PYVERS:%=build-%/build-stamp) $(PYVERS:%=dbg-build-%/build-stamp)
 
 build-%/check-stamp: build-%/build-stamp
-	-PYTHON=/usr/bin/python$* $(MAKE) -C build-$* check
+	find gi -name '*.py' -exec cp '$(CURDIR)/{}' build-$*/'{}' \;
+	# don't run the tests under fakeroot, otherwise they will try to
+	# connect to root's session D-BUS
+	-PYTHON=/usr/bin/python$* LD_PRELOAD= xvfb-run $(MAKE) -C build-$* check
 	touch $@
 
 dbg-build-%/check-stamp: dbg-build-%/build-stamp
-	-PYTHON=/usr/bin/python$*-dbg $(MAKE) -C dbg-build-$* check
+	find gi -name '*.py' -exec cp '$(CURDIR)/{}' dbg-build-$*/'{}' \;
+	# don't run the tests under fakeroot, otherwise they will try to
+	# connect to root's session D-BUS
+	-PYTHON=/usr/bin/python$*-dbg LD_PRELOAD= xvfb-run $(MAKE) -C dbg-build-$* check
 	touch $@
 
 check: $(PYVERS:%=build-%/check-stamp) $(PYVERS:%=dbg-build-%/check-stamp)
 
-build-%/install-stamp: build-%/build-stamp
+build-2.%/install-stamp: build-2.%/build-stamp
 	dh_testdir
 	dh_testroot
-	PYTHON=/usr/bin/python$* $(MAKE) -C build-$* install DESTDIR=$(CURDIR)/debian/python-gobject-dev pyexecdir=/usr/lib/pymodules/python$*
+	PYTHON=/usr/bin/python2.$* $(MAKE) -C build-2.$* install DESTDIR=$(CURDIR)/debian/python-gi pyexecdir=$(call py_libdir_sh, 2.$*)
+	# install development parts
+	mkdir -p debian/python-gi-dev/usr/lib
+	cp -r debian/python-gi/usr/include debian/python-gi-dev/usr/
+	cp -r debian/python-gi/usr/lib/pkgconfig debian/python-gi-dev/usr/lib
+	# remove stuff that we do not need in python-gi
+	-find debian/python-gi/ ! -path '*/usr/lib/*' -delete
+	find debian/python-gi/ \( -name '*.pyc' -o -name '*.pyo' -o -name '*.la' \) -delete
+	# dh_python2 trips over this empty dir in the sanity check for >= 2.6, so remove it
+	rmdir debian/python-gi/usr/lib/python2.$*/site-packages
+	rm -r debian/python-gi/usr/lib/pkgconfig
+
+build-3.%/install-stamp: build-3.%/build-stamp
+	dh_testdir
+	dh_testroot
+	PYTHON=/usr/bin/python3.$* $(MAKE) -C build-3.$* install DESTDIR=$(CURDIR)/debian/python3-gi pyexecdir=$(call py_libdir_sh, 3.$*)
+	-find debian/python3-gi/ ! -path '*/usr/lib/*' -delete
+	find debian/python3-gi/ \( -name '*.pyc' -o -name '*.pyo' -o -name '*.la' \) -delete
+	rm -r debian/python3-gi/usr/lib/pkgconfig
+	
+	# tag the Python extensions like distutils, as upstream build system
+	# uses autotools and does not know about http://www.python.org/dev/peps/pep-3149/
+	ABITAG=`python3.$* -c "import sysconfig; print(sysconfig.get_config_var('SOABI'))"`; \
+	for f in `find debian/python3-gi/usr/lib/python* -name '*.so'`; do \
+	    mv $$f $${f%.so}.$$ABITAG.so; \
+	done
+	
 	touch $@
 
-dbg-build-%/install-stamp: dbg-build-%/build-stamp
+dbg-build-2.%/install-stamp: dbg-build-2.%/build-stamp
 	dh_testdir
 	dh_testroot
-	PYTHON=/usr/bin/python$*-dbg $(MAKE) -C dbg-build-$* install DESTDIR=$(CURDIR)/debian/python-gobject-dbg
-	find debian/python-gobject-dbg ! -type d ! \( -name '*.so' -o -name '*.so.*' \) -delete
-	find debian/python-gobject-dbg -type d -empty -delete
+	PYTHON=/usr/bin/python2.$*-dbg $(MAKE) -C dbg-build-2.$* install DESTDIR=$(CURDIR)/debian/python-gi-dbg pyexecdir=$(call py_libdir_sh, 2.$*)
+	find debian/python-gi-dbg ! -type d ! \( -name '*.so' -o -name '*.so.*' \) -delete
+	find debian/python-gi-dbg -type d -empty -delete
+	touch $@
+
+dbg-build-3.%/install-stamp: dbg-build-3.%/build-stamp
+	dh_testdir
+	dh_testroot
+	PYTHON=/usr/bin/python3.$*-dbg $(MAKE) -C dbg-build-3.$* install DESTDIR=$(CURDIR)/debian/python3-gi-dbg pyexecdir=$(call py_libdir_sh, 3.$*)
+	find debian/python3-gi-dbg ! -type d ! \( -name '*.so' -o -name '*.so.*' \) -delete
+	find debian/python3-gi-dbg -type d -empty -delete
+	
+	# tag the Python extensions like distutils, as upstream build system
+	# uses autotools and does not know about http://www.python.org/dev/peps/pep-3149/
+	ABITAG=`python3.$*-dbg -c "import sysconfig; print(sysconfig.get_config_var('SOABI'))"`; \
+	for f in `find debian/python3-gi-dbg/usr/lib/python* -name '*.so'`; do \
+	    mv $$f $${f%.so}.$$ABITAG.so; \
+	done
+	
 	touch $@
 
 install-stamp: $(PYVERS:%=build-%/build-stamp) $(PYVERS:%=dbg-build-%/build-stamp)
@@ -115,17 +141,22 @@ install-stamp: $(PYVERS:%=build-%/build-stamp) $(PYVERS:%=dbg-build-%/build-stam
 	dh_prep
 	rm -f $(PYVERS:%=build-%/install-stamp) $(PYVERS:%=dbg-build-%/install-stamp)
 	$(MAKE) -f debian/rules $(PYVERS:%=build-%/install-stamp) $(PYVERS:%=dbg-build-%/install-stamp)
-	find debian/python-gobject-dev -name \*.la -delete
-	mkdir -p debian/python-gobject/usr/lib
-	mv debian/python-gobject-dev/usr/lib/pymodules debian/python-gobject/usr/lib/
-	mv debian/python-gobject-dev/usr/lib/libpyglib-*so.* \
-	   debian/python-gobject/usr/lib
-	rm -rf debian/python-gobject-dev/usr/lib/python*
-	for i in $$(find debian/python-gobject-dbg -name '*.so' -path 'debian/python-gobject-dbg/usr/lib/python*/site-packages/*'); do \
+	for i in $(PYVERS); do \
+		if [ "$${i#3.}" = "$$i" ]; then \
+			mkdir -p debian/python-gi-cairo/$(call py_libdir_sh, $$i)/gi; \
+			mv debian/python-gi/$(call py_libdir_sh, $$i)/gi/_gi_cairo.so debian/python-gi-cairo/$(call py_libdir_sh, $$i)/gi; \
+		else \
+			ABITAG=`python$$i -c "import sysconfig; print(sysconfig.get_config_var('SOABI'))"`; \
+			mkdir -p debian/python3-gi-cairo/$(call py_libdir_sh, $$i)/gi; \
+			mv debian/python3-gi/$(call py_libdir_sh, $$i)/gi/_gi_cairo.$$ABITAG.so debian/python3-gi-cairo/$(call py_libdir_sh, $$i)/gi; \
+		fi \
+	done
+	mkdir -p debian/python-gi/usr/lib
+	for i in $$(find debian/python-gi-dbg -name '*.so' -path 'debian/python-gi-dbg/usr/lib/python*/*-packages/*'); do \
 		b=$$(basename $$i .so); \
 		mv $$i $$(dirname $$i)/$${b}_d.so; \
 	done
-
+	
 	touch $@
 
 install: install-stamp
@@ -134,8 +165,9 @@ clean::
 	dh_testdir
 	dh_testroot
 	rm -f install-stamp
+	rm -f patch-stamp
 	rm -rf build-* dbg-build-*
-	$(MAKE) -f debian/rules unpatch
+	dh_autoreconf_clean
 	dh_clean *.pyc */*.pyc
 
 maybe_check = $(if $(findstring nocheck,$(DEB_BUILD_OPTIONS)),,check)
@@ -149,9 +181,7 @@ binary-indep: install $(maybe_check)
 	dh_link -i
 	dh_compress -i -X.py
 	dh_fixperms -i
-	# More permission fixing
-	chmod 755 `grep -rl "^#\!.*python" debian/python-gobject-dev/usr`
-	dh_pysupport -i /usr/share/pygobject
+	dh_python2 -i /usr/share/pygobject
 	dh_installdeb -i
 	dh_gencontrol -i
 	dh_md5sums -i
@@ -163,15 +193,18 @@ binary-arch: install $(maybe_check)
 	dh_installdocs -s
 	dh_installexamples -s
 	dh_installchangelogs -s ChangeLog
-	dh_strip -ppython-gobject --dbg-package=python-gobject-dbg
-	rm -rf debian/python-gobject-dbg/usr/share/doc/python-gobject-dbg
-	ln -sf python-gobject debian/python-gobject-dbg/usr/share/doc/python-gobject-dbg
+	dh_strip -ppython-gi --dbg-package=python-gi-dbg
+	dh_strip -ppython-gi-cairo --dbg-package=python-gi-dbg
+	dh_strip -ppython3-gi --dbg-package=python3-gi-dbg
 	dh_link -s
 	dh_compress -s -X.py
 	dh_fixperms -s
-	dh_pysupport -s
-	dh_makeshlibs -ppython-gobject     -V'python-gobject (>= 2.15.2)'
-	dh_makeshlibs -ppython-gobject-dbg -V'python-gobject-dbg (>= 2.15.2)'
+	dh_python2 -a
+	dh_python3 -a
+	dh_makeshlibs -ppython-gi      -V'python-gi (>= 2.90.1)'
+	dh_makeshlibs -ppython-gi-dbg  -V'python-gi-dbg (>= 2.90.1)'
+	dh_makeshlibs -ppython3-gi     -V'python3-gi (>= 2.90.1)'
+	dh_makeshlibs -ppython3-gi-dbg -V'python3-gi-dbg (>= 2.90.1)'
 	dh_installdeb -s
 	dh_shlibdeps -s
 	dh_gencontrol -s
@@ -179,4 +212,4 @@ binary-arch: install $(maybe_check)
 	dh_builddeb -s
 
 binary: binary-arch binary-indep
-.PHONY: patch unpatch build check install clean binary-indep binary-arch binary
+.PHONY: patch build check install clean binary-indep binary-arch binary

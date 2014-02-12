@@ -1,13 +1,17 @@
+# -*- Mode: Python -*-
+
 import unittest
 
-from common import gobject, testhelper
+from gi.repository import GObject
+import testhelper
 
-GUnknown = gobject.type_from_name("TestUnknown")
+
+GUnknown = GObject.type_from_name("TestUnknown")
 Unknown = GUnknown.pytype
 
 
 class MyUnknown(Unknown, testhelper.Interface):
-    some_property = gobject.property(type=str)
+    some_property = GObject.Property(type=str)
 
     def __init__(self):
         Unknown.__init__(self)
@@ -16,19 +20,19 @@ class MyUnknown(Unknown, testhelper.Interface):
     def do_iface_method(self):
         self.called = True
         Unknown.do_iface_method(self)
-gobject.type_register(MyUnknown)
+GObject.type_register(MyUnknown)
 
 
-class MyObject(gobject.GObject, testhelper.Interface):
-    some_property = gobject.property(type=str)
+class MyObject(GObject.GObject, testhelper.Interface):
+    some_property = GObject.Property(type=str)
 
     def __init__(self):
-        gobject.GObject.__init__(self)
+        GObject.GObject.__init__(self)
         self.called = False
 
     def do_iface_method(self):
         self.called = True
-gobject.type_register(MyObject)
+GObject.type_register(MyObject)
 
 
 class TestIfaceImpl(unittest.TestCase):
@@ -42,4 +46,3 @@ class TestIfaceImpl(unittest.TestCase):
         m = MyObject()
         m.iface_method()
         self.assertEqual(m.called, True)
-
