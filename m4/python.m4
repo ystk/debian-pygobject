@@ -43,15 +43,18 @@ AC_DEFUN([AM_CHECK_PYTHON_HEADERS],
 [AC_REQUIRE([AM_PATH_PYTHON])
 AC_MSG_CHECKING(for headers required to compile python extensions)
 dnl deduce PYTHON_INCLUDES
-py_prefix=`$PYTHON -c "import sys; sys.stdout.write(sys.prefix)"`
-py_exec_prefix=`$PYTHON -c "import sys; sys.stdout.write(sys.exec_prefix)"`
-if test -x "$PYTHON-config"; then
-PYTHON_INCLUDES=`$PYTHON-config --includes 2>/dev/null`
-else
-PYTHON_INCLUDES="-I${py_prefix}/include/python${PYTHON_VERSION}"
-if test "$py_prefix" != "$py_exec_prefix"; then
-  PYTHON_INCLUDES="$PYTHON_INCLUDES -I${py_exec_prefix}/include/python${PYTHON_VERSION}"
->fi
+if test "x$PYTHON_INCLUDES" = x; then
+  PYTHON_CONFIG=`which $PYTHON`-config
+  if test -x "$PYTHON_CONFIG"; then
+    PYTHON_INCLUDES=`$PYTHON_CONFIG --includes 2>/dev/null`
+  else
+    py_prefix=`$PYTHON -c "import sys; sys.stdout.write(sys.prefix)"`
+    py_exec_prefix=`$PYTHON -c "import sys; sys.stdout.write(sys.exec_prefix)"`
+    PYTHON_INCLUDES="-I${py_prefix}/include/python${PYTHON_VERSION}"
+    if test "$py_prefix" != "$py_exec_prefix"; then
+      PYTHON_INCLUDES="$PYTHON_INCLUDES -I${py_exec_prefix}/include/python${PYTHON_VERSION}"
+    fi
+  fi
 fi
 AC_SUBST(PYTHON_INCLUDES)
 dnl check if the headers exist:
@@ -63,6 +66,31 @@ $1],dnl
 [AC_MSG_RESULT(not found)
 $2])
 CPPFLAGS="$save_CPPFLAGS"
+])
+
+dnl a macro to check for ability to embed python
+dnl  AM_CHECK_PYTHON_LIBS([ACTION-IF-POSSIBLE], [ACTION-IF-NOT-POSSIBLE])
+dnl function also defines PYTHON_LIBS
+AC_DEFUN([AM_CHECK_PYTHON_LIBS],
+[AC_REQUIRE([AM_CHECK_PYTHON_HEADERS])
+AC_MSG_CHECKING(for libraries required to embed python)
+dnl deduce PYTHON_LIBS
+py_exec_prefix=`$PYTHON -c "import sys; print(sys.exec_prefix)"`
+if test "x$PYTHON_LIBS" = x; then
+	PYTHON_LIBS="-L${py_prefix}/lib -lpython${PYTHON_VERSION}"
+fi
+if test "x$PYTHON_LIB_LOC" = x; then
+	PYTHON_LIB_LOC="${py_prefix}/lib"
+fi
+AC_SUBST(PYTHON_LIBS)
+AC_SUBST(PYTHON_LIB_LOC)
+dnl check if the headers exist:
+save_LIBS="$LIBS"
+LIBS="$LIBS $PYTHON_LIBS"
+AC_TRY_LINK_FUNC(Py_Initialize, dnl
+         [LIBS="$save_LIBS"; AC_MSG_RESULT(yes); $1], dnl
+         [LIBS="$save_LIBS"; AC_MSG_RESULT(no); $2])
+
 ])
 
 # JD_PYTHON_CHECK_VERSION(PROG, VERSION, [ACTION-IF-TRUE], [ACTION-IF-FALSE])
@@ -196,7 +224,7 @@ python2.1 python2.0])
   dnl doesn't work.
   AC_CACHE_CHECK([for $am_display_PYTHON script directory],
     [am_cv_python_pythondir],
-    [am_cv_python_pythondir=`$PYTHON -c "from distutils import sysconfig; print sysconfig.get_python_lib(0,0,prefix='$PYTHON_PREFIX')" 2>/dev/null ||
+    [am_cv_python_pythondir=`$PYTHON -c "from distutils import sysconfig; print(sysconfig.get_python_lib(0,0,prefix='$PYTHON_PREFIX'))" 2>/dev/null ||
      echo "$PYTHON_PREFIX/lib/python$PYTHON_VERSION/site-packages"`])
   AC_SUBST([pythondir], [$am_cv_python_pythondir])
 
@@ -213,7 +241,7 @@ python2.1 python2.0])
   dnl doesn't work.
   AC_CACHE_CHECK([for $am_display_PYTHON extension module directory],
     [am_cv_python_pyexecdir],
-    [am_cv_python_pyexecdir=`$PYTHON -c "from distutils import sysconfig; print sysconfig.get_python_lib(1,0,prefix='$PYTHON_EXEC_PREFIX')" 2>/dev/null ||
+    [am_cv_python_pyexecdir=`$PYTHON -c "from distutils import sysconfig; print(sysconfig.get_python_lib(1,0,prefix='$PYTHON_EXEC_PREFIX'))" 2>/dev/null ||
      echo "${PYTHON_EXEC_PREFIX}/lib/python${PYTHON_VERSION}/site-packages"`])
   AC_SUBST([pyexecdir], [$am_cv_python_pyexecdir])
 
@@ -225,33 +253,4 @@ python2.1 python2.0])
   $2
   fi
 
-])
-
-dnl a macro to check for ability to create python extensions
-dnl  JD_CHECK_PYTHON_HEADERS([ACTION-IF-POSSIBLE], [ACTION-IF-NOT-POSSIBLE])
-dnl function also defines PYTHON_INCLUDES
-AC_DEFUN([JD_CHECK_PYTHON_HEADERS],
-[AC_REQUIRE([AM_PATH_PYTHON])
-AC_MSG_CHECKING(for headers required to compile python extensions)
-dnl deduce PYTHON_INCLUDES
-py_prefix=`$PYTHON -c "import sys; sys.stdout.write(sys.prefix)"`
-py_exec_prefix=`$PYTHON -c "import sys; sys.stdout.write(sys.exec_prefix)"`
-if test -x "$PYTHON-config"; then
-PYTHON_INCLUDES=`$PYTHON-config --includes 2>/dev/null`
-else
-PYTHON_INCLUDES="-I${py_prefix}/include/python${PYTHON_VERSION}"
-if test "$py_prefix" != "$py_exec_prefix"; then
-  PYTHON_INCLUDES="$PYTHON_INCLUDES -I${py_exec_prefix}/include/python${PYTHON_VERSION}"
-fi
-fi
-AC_SUBST(PYTHON_INCLUDES)
-dnl check if the headers exist:
-save_CPPFLAGS="$CPPFLAGS"
-CPPFLAGS="$CPPFLAGS $PYTHON_INCLUDES"
-AC_TRY_CPP([#include <Python.h>],dnl
-[AC_MSG_RESULT(found)
-$1],dnl
-[AC_MSG_RESULT(not found)
-$2])
-CPPFLAGS="$save_CPPFLAGS"
 ])

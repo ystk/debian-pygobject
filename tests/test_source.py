@@ -1,13 +1,12 @@
-#!/usr/bin/env python
+# -*- Mode: Python -*-
 
 import unittest
 
-from common import glib
+from gi.repository import GLib
 
-
-class Idle(glib.Idle):
+class Idle(GLib.Idle):
     def __init__(self, loop):
-        glib.Idle.__init__(self)
+        GLib.Idle.__init__(self)
         self.count = 0
         self.set_callback(self.callback, loop)
 
@@ -16,9 +15,9 @@ class Idle(glib.Idle):
         return True
 
 
-class MySource(glib.Source):
+class MySource(GLib.Source):
     def __init__(self):
-        glib.Source.__init__(self)
+        GLib.Source.__init__(self)
 
     def prepare(self):
         return True, 0
@@ -39,12 +38,12 @@ class TestSource(unittest.TestCase):
         return True
 
     def setup_timeout(self, loop):
-        timeout = glib.Timeout(500)
+        timeout = GLib.Timeout(500)
         timeout.set_callback(self.timeout_callback, loop)
         timeout.attach()
 
     def testSources(self):
-        loop = glib.MainLoop()
+        loop = GLib.MainLoop()
 
         self.setup_timeout(loop)
 
@@ -64,9 +63,9 @@ class TestSource(unittest.TestCase):
     def testSourcePrepare(self):
         # this test may not terminate if prepare() is wrapped incorrectly
         dispatched = [False]
-        loop = glib.MainLoop()
+        loop = GLib.MainLoop()
 
-        class CustomTimeout(glib.Source):
+        class CustomTimeout(GLib.Source):
             def prepare(self):
                 return (False, 10)
 
@@ -91,9 +90,9 @@ class TestSource(unittest.TestCase):
 
 
 class TestTimeout(unittest.TestCase):
-     def test504337(self):
-	timeout_source = glib.Timeout(20)
-	idle_source = glib.Idle()
+    def test504337(self):
+        timeout_source = GLib.Timeout(20)
+        idle_source = GLib.Idle()
 
 
 if __name__ == '__main__':

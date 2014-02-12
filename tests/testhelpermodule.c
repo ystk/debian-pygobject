@@ -5,6 +5,8 @@
 #include "test-unknown.h"
 #include "test-floating.h"
 
+#include <pyglib-python-compat.h>
+
 static PyTypeObject *_PyGObject_Type;
 #define PyGObject_Type (*_PyGObject_Type)
 
@@ -83,7 +85,7 @@ _wrap_test_g_object_new (PyObject * self)
     PyObject *rv;
 
     obj = g_object_new(g_type_from_name("PyGObject"), NULL);
-    rv = PyInt_FromLong(obj->ref_count); /* should be == 2 at this point */
+    rv = PYGLIB_PyLong_FromLong(obj->ref_count); /* should be == 2 at this point */
     g_object_unref(obj);
     return rv;
 }
@@ -112,53 +114,7 @@ static const PyMethodDef _PyTestInterface_methods[] = {
 };
 
 /* TestInterface */
-PyTypeObject PyTestInterface_Type = {
-    PyObject_HEAD_INIT(NULL)
-    0,					/* ob_size */
-    "test.Interface",			/* tp_name */
-    sizeof(PyObject),	        /* tp_basicsize */
-    0,					/* tp_itemsize */
-    /* methods */
-    (destructor)0,	/* tp_dealloc */
-    (printfunc)0,			/* tp_print */
-    (getattrfunc)0,	/* tp_getattr */
-    (setattrfunc)0,	/* tp_setattr */
-    (cmpfunc)0,		/* tp_compare */
-    (reprfunc)0,		/* tp_repr */
-    (PyNumberMethods*)0,     /* tp_as_number */
-    (PySequenceMethods*)0, /* tp_as_sequence */
-    (PyMappingMethods*)0,   /* tp_as_mapping */
-    (hashfunc)0,		/* tp_hash */
-    (ternaryfunc)0,		/* tp_call */
-    (reprfunc)0,		/* tp_str */
-    (getattrofunc)0,			/* tp_getattro */
-    (setattrofunc)0,			/* tp_setattro */
-    (PyBufferProcs*)0,	/* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
-    NULL,                        /* Documentation string */
-    (traverseproc)0,     /* tp_traverse */
-    (inquiry)0,             /* tp_clear */
-    (richcmpfunc)0,   /* tp_richcompare */
-    0,             /* tp_weaklistoffset */
-    (getiterfunc)0,          /* tp_iter */
-    (iternextfunc)0,     /* tp_iternext */
-    (struct PyMethodDef*)_PyTestInterface_methods, /* tp_methods */
-    (struct PyMemberDef*)0,              /* tp_members */
-    (struct PyGetSetDef*)0,  /* tp_getset */
-    NULL,                              /* tp_base */
-    NULL,                              /* tp_dict */
-    (descrgetfunc)0,    /* tp_descr_get */
-    (descrsetfunc)0,    /* tp_descr_set */
-    0,                 /* tp_dictoffset */
-    (initproc)0,             /* tp_init */
-    (allocfunc)0,           /* tp_alloc */
-    (newfunc)0,               /* tp_new */
-    (freefunc)0,             /* tp_free */
-    (inquiry)0              /* tp_is_gc */
-
-
-    
-};
+PYGLIB_DEFINE_TYPE("test.Interface", PyTestInterface_Type, PyObject);
 
 static PyObject *
 _wrap_TestInterface__do_iface_method(PyObject *cls, PyObject *args, PyObject *kwargs)
@@ -183,51 +139,7 @@ _wrap_TestInterface__do_iface_method(PyObject *cls, PyObject *args, PyObject *kw
   return Py_None;
 }
 
-PyTypeObject PyTestUnknown_Type = {
-    PyObject_HEAD_INIT(NULL)
-    0,                                 /* ob_size */
-    "testhelper.Unknown",            /* tp_name */
-    sizeof(PyGObject),          /* tp_basicsize */
-    0,                                 /* tp_itemsize */
-    /* methods */
-    (destructor)0,        /* tp_dealloc */
-    (printfunc)0,                      /* tp_print */
-    (getattrfunc)0,       /* tp_getattr */
-    (setattrfunc)0,       /* tp_setattr */
-    (cmpfunc)0,           /* tp_compare */
-    (reprfunc)0,             /* tp_repr */
-    (PyNumberMethods*)0,     /* tp_as_number */
-    (PySequenceMethods*)0, /* tp_as_sequence */
-    (PyMappingMethods*)0,   /* tp_as_mapping */
-    (hashfunc)0,             /* tp_hash */
-    (ternaryfunc)0,          /* tp_call */
-    (reprfunc)0,              /* tp_str */
-    (getattrofunc)0,     /* tp_getattro */
-    (setattrofunc)0,     /* tp_setattro */
-    (PyBufferProcs*)0,  /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,                      /* tp_flags */
-    NULL,                        /* Documentation string */
-    (traverseproc)0,     /* tp_traverse */
-    (inquiry)0,             /* tp_clear */
-    (richcmpfunc)0,   /* tp_richcompare */
-    offsetof(PyGObject, weakreflist),             /* tp_weaklistoffset */
-    (getiterfunc)0,          /* tp_iter */
-    (iternextfunc)0,     /* tp_iternext */
-    (struct PyMethodDef*)0, /* tp_methods */
-    (struct PyMemberDef*)0,              /* tp_members */
-    (struct PyGetSetDef*)0,  /* tp_getset */
-    NULL,                              /* tp_base */
-    NULL,                              /* tp_dict */
-    (descrgetfunc)0,    /* tp_descr_get */
-    (descrsetfunc)0,    /* tp_descr_set */
-    offsetof(PyGObject, inst_dict),                 /* tp_dictoffset */
-    (initproc)0,             /* tp_init */
-    (allocfunc)0,           /* tp_alloc */
-    (newfunc)0,               /* tp_new */
-    (freefunc)0,             /* tp_free */
-    (inquiry)0              /* tp_is_gc */
-};
-
+PYGLIB_DEFINE_TYPE("testhelper.Unknown", PyTestUnknown_Type, PyGObject);
 
 static void
 _wrap_TestInterface__proxy_do_iface_method(TestInterface *self)
@@ -312,99 +224,39 @@ static const GInterfaceInfo __TestInterface__iinfo = {
     NULL
 };
 
-/* TestFloatingWithSinkFunc */
+/* TestFloating */
+PYGLIB_DEFINE_TYPE("testhelper.Floating", PyTestFloating_Type, PyGObject);
 
-PyTypeObject PyTestFloatingWithSinkFunc_Type = {
-    PyObject_HEAD_INIT(NULL)
-    0,                                 /* ob_size */
-    "testhelper.FloatingWithSinkFunc", /* tp_name */
-    sizeof(PyGObject),          /* tp_basicsize */
-    0,                                 /* tp_itemsize */
-    /* methods */
-    (destructor)0,        /* tp_dealloc */
-    (printfunc)0,                      /* tp_print */
-    (getattrfunc)0,       /* tp_getattr */
-    (setattrfunc)0,       /* tp_setattr */
-    (cmpfunc)0,           /* tp_compare */
-    (reprfunc)0,             /* tp_repr */
-    (PyNumberMethods*)0,     /* tp_as_number */
-    (PySequenceMethods*)0, /* tp_as_sequence */
-    (PyMappingMethods*)0,   /* tp_as_mapping */
-    (hashfunc)0,             /* tp_hash */
-    (ternaryfunc)0,          /* tp_call */
-    (reprfunc)0,              /* tp_str */
-    (getattrofunc)0,     /* tp_getattro */
-    (setattrofunc)0,     /* tp_setattro */
-    (PyBufferProcs*)0,  /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,                      /* tp_flags */
-    NULL,                        /* Documentation string */
-    (traverseproc)0,     /* tp_traverse */
-    (inquiry)0,             /* tp_clear */
-    (richcmpfunc)0,   /* tp_richcompare */
-    offsetof(PyGObject, weakreflist),             /* tp_weaklistoffset */
-    (getiterfunc)0,          /* tp_iter */
-    (iternextfunc)0,     /* tp_iternext */
-    (struct PyMethodDef*)0, /* tp_methods */
-    (struct PyMemberDef*)0,              /* tp_members */
-    (struct PyGetSetDef*)0,  /* tp_getset */
-    NULL,                              /* tp_base */
-    NULL,                              /* tp_dict */
-    (descrgetfunc)0,    /* tp_descr_get */
-    (descrsetfunc)0,    /* tp_descr_set */
-    offsetof(PyGObject, inst_dict),                 /* tp_dictoffset */
-    (initproc)0,             /* tp_init */
-    (allocfunc)0,           /* tp_alloc */
-    (newfunc)0,               /* tp_new */
-    (freefunc)0,             /* tp_free */
-    (inquiry)0              /* tp_is_gc */
+/* TestOwnedByLibrary */
+PYGLIB_DEFINE_TYPE("testhelper.OwnedByLibrary", PyTestOwnedByLibrary_Type, PyGObject);
+
+static PyObject *
+_wrap_test_owned_by_library_release (PyGObject *self)
+{
+    test_owned_by_library_release (TEST_OWNED_BY_LIBRARY (self->obj));
+    return Py_None;
+}
+
+static const PyMethodDef _PyTestOwnedByLibrary_methods[] = {
+    { "release", (PyCFunction)_wrap_test_owned_by_library_release, METH_NOARGS, NULL },
+    { NULL, NULL, 0, NULL }
 };
 
-/* TestFloatingWithoutSinkFunc */
+/* TestFloatingAndSunk */
+PYGLIB_DEFINE_TYPE("testhelper.FloatingAndSunk", PyTestFloatingAndSunk_Type, PyGObject);
 
-PyTypeObject PyTestFloatingWithoutSinkFunc_Type = {
-    PyObject_HEAD_INIT(NULL)
-    0,                                 /* ob_size */
-    "testhelper.FloatingWithoutSinkFunc", /* tp_name */
-    sizeof(PyGObject),          /* tp_basicsize */
-    0,                                 /* tp_itemsize */
-    /* methods */
-    (destructor)0,        /* tp_dealloc */
-    (printfunc)0,                      /* tp_print */
-    (getattrfunc)0,       /* tp_getattr */
-    (setattrfunc)0,       /* tp_setattr */
-    (cmpfunc)0,           /* tp_compare */
-    (reprfunc)0,             /* tp_repr */
-    (PyNumberMethods*)0,     /* tp_as_number */
-    (PySequenceMethods*)0, /* tp_as_sequence */
-    (PyMappingMethods*)0,   /* tp_as_mapping */
-    (hashfunc)0,             /* tp_hash */
-    (ternaryfunc)0,          /* tp_call */
-    (reprfunc)0,              /* tp_str */
-    (getattrofunc)0,     /* tp_getattro */
-    (setattrofunc)0,     /* tp_setattro */
-    (PyBufferProcs*)0,  /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,                      /* tp_flags */
-    NULL,                        /* Documentation string */
-    (traverseproc)0,     /* tp_traverse */
-    (inquiry)0,             /* tp_clear */
-    (richcmpfunc)0,   /* tp_richcompare */
-    offsetof(PyGObject, weakreflist),             /* tp_weaklistoffset */
-    (getiterfunc)0,          /* tp_iter */
-    (iternextfunc)0,     /* tp_iternext */
-    (struct PyMethodDef*)0, /* tp_methods */
-    (struct PyMemberDef*)0,              /* tp_members */
-    (struct PyGetSetDef*)0,  /* tp_getset */
-    NULL,                              /* tp_base */
-    NULL,                              /* tp_dict */
-    (descrgetfunc)0,    /* tp_descr_get */
-    (descrsetfunc)0,    /* tp_descr_set */
-    offsetof(PyGObject, inst_dict),                 /* tp_dictoffset */
-    (initproc)0,             /* tp_init */
-    (allocfunc)0,           /* tp_alloc */
-    (newfunc)0,               /* tp_new */
-    (freefunc)0,             /* tp_free */
-    (inquiry)0              /* tp_is_gc */
+static PyObject *
+_wrap_test_floating_and_sunk_release (PyGObject *self)
+{
+    test_floating_and_sunk_release (TEST_FLOATING_AND_SUNK (self->obj));
+    return Py_None;
+}
+
+static const PyMethodDef _PyTestFloatingAndSunk_methods[] = {
+    { "release", (PyCFunction)_wrap_test_floating_and_sunk_release, METH_NOARGS, NULL },
+    { NULL, NULL, 0, NULL }
 };
+
 
 #include <string.h>
 #include <glib-object.h>
@@ -447,7 +299,7 @@ test4_callback (GObject *object,
   g_return_if_fail (b == TRUE);
   g_return_if_fail (l == 10L);
   g_return_if_fail (f <= 3.14001 && f >= 3.13999);
-  g_return_if_fail (d == 1.78);
+  g_return_if_fail (d <= 1.78001 && d >= 1.77999);
   g_return_if_fail (uint == 20);
   g_return_if_fail (ulong == 30L);
 }
@@ -607,6 +459,52 @@ _wrap_test_gerror_exception(PyObject *self, PyObject *args)
     return Py_None;
 }
 
+static PyObject *
+_wrap_test_owned_by_library_get_instance_list (PyObject *self)
+{
+    PyObject *py_list, *py_obj;
+    GSList *list, *tmp;
+
+    list = test_owned_by_library_get_instance_list ();
+
+    if ((py_list = PyList_New (0)) == NULL) {
+	return NULL;
+    }
+    for (tmp = list; tmp != NULL; tmp = tmp->next) {
+	py_obj = pygobject_new (G_OBJECT (tmp->data));
+	if (py_obj == NULL) {
+	    Py_DECREF (py_list);
+	    return NULL;
+	}
+	PyList_Append (py_list, py_obj);
+	Py_DECREF (py_obj);
+    }
+    return py_list;
+}
+
+static PyObject *
+_wrap_test_floating_and_sunk_get_instance_list (PyObject *self)
+{
+    PyObject *py_list, *py_obj;
+    GSList *list, *tmp;
+
+    list = test_floating_and_sunk_get_instance_list ();
+
+    if ((py_list = PyList_New (0)) == NULL) {
+       return NULL;
+    }
+    for (tmp = list; tmp != NULL; tmp = tmp->next) {
+       py_obj = pygobject_new (G_OBJECT (tmp->data));
+       if (py_obj == NULL) {
+           Py_DECREF (py_list);
+           return NULL;
+       }
+       PyList_Append (py_list, py_obj);
+       Py_DECREF (py_obj);
+    }
+    return py_list;
+}
+
 static PyMethodDef testhelper_functions[] = {
     { "get_test_thread", (PyCFunction)_wrap_get_test_thread, METH_NOARGS },
     { "get_unknown", (PyCFunction)_wrap_get_unknown, METH_NOARGS },
@@ -616,64 +514,81 @@ static PyMethodDef testhelper_functions[] = {
     { "test_value", (PyCFunction)_wrap_test_value, METH_VARARGS },      
     { "test_value_array", (PyCFunction)_wrap_test_value_array, METH_VARARGS },
     { "test_gerror_exception", (PyCFunction)_wrap_test_gerror_exception, METH_VARARGS },
+    { "owned_by_library_get_instance_list", (PyCFunction)_wrap_test_owned_by_library_get_instance_list, METH_NOARGS },
+    { "floating_and_sunk_get_instance_list", (PyCFunction)_wrap_test_floating_and_sunk_get_instance_list, METH_NOARGS },
     { NULL, NULL }
 };
 
-void 
-inittesthelper ()
+PYGLIB_MODULE_START(testhelper, "testhelper")
 {
   PyObject *m, *d;
-  PyObject *module;
   
   g_thread_init(NULL);
-  init_pygobject();
-  m = Py_InitModule ("testhelper", testhelper_functions);
+  pygobject_init(-1, -1, -1);
 
-  d = PyModule_GetDict(m);
+  d = PyModule_GetDict(module);
 
-  if ((module = PyImport_ImportModule("gobject")) != NULL) {
-    PyObject *moddict = PyModule_GetDict(module);
+  if ((m = PyImport_ImportModule("gi._gobject")) != NULL) {
+    PyObject *moddict = PyModule_GetDict(m);
     
     _PyGObject_Type = (PyTypeObject *)PyDict_GetItemString(moddict, "GObject");
     if (_PyGObject_Type == NULL) {
       PyErr_SetString(PyExc_ImportError,
 		      "cannot import name GObject from gobject");
-      return ;
+      return PYGLIB_MODULE_ERROR_RETURN;
     }
   } else {
     PyErr_SetString(PyExc_ImportError,
 		    "could not import gobject");
-    return ;
+    return PYGLIB_MODULE_ERROR_RETURN;
   }
 
   /* TestInterface */
+  PyTestInterface_Type.tp_methods = (struct PyMethodDef*)_PyTestInterface_methods;
+  PyTestInterface_Type.tp_flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE);  
   pyg_register_interface(d, "Interface", TEST_TYPE_INTERFACE,
 			 &PyTestInterface_Type);
   pyg_register_interface_info(TEST_TYPE_INTERFACE, &__TestInterface__iinfo);
 
 
   /* TestUnknown */
+  PyTestUnknown_Type.tp_flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE);
+  PyTestUnknown_Type.tp_weaklistoffset = offsetof(PyGObject, weakreflist);
+  PyTestUnknown_Type.tp_dictoffset = offsetof(PyGObject, inst_dict);
   pygobject_register_class(d, "Unknown", TEST_TYPE_UNKNOWN,
 			   &PyTestUnknown_Type,
 			   Py_BuildValue("(O)",
-					 &PyGObject_Type,
-					 &PyTestInterface_Type));
-  pyg_set_object_has_new_constructor(TEST_TYPE_UNKNOWN);
-  //pyg_register_class_init(TEST_TYPE_UNKNOWN, __GtkUIManager_class_init);
+                           &PyGObject_Type,
+                           &PyTestInterface_Type));
 
-  /* TestFloatingWithSinkFunc */
-  pygobject_register_class(d, "FloatingWithSinkFunc", TEST_TYPE_FLOATING_WITH_SINK_FUNC,
-			   &PyTestFloatingWithSinkFunc_Type,
+  /* TestFloating */
+  PyTestFloating_Type.tp_flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE);
+  PyTestFloating_Type.tp_weaklistoffset = offsetof(PyGObject, weakreflist);
+  PyTestFloating_Type.tp_dictoffset = offsetof(PyGObject, inst_dict);
+  pygobject_register_class(d, "Floating", TEST_TYPE_FLOATING,
+			   &PyTestFloating_Type,
 			   Py_BuildValue("(O)",
-					 &PyGObject_Type));
-  pyg_set_object_has_new_constructor(TEST_TYPE_FLOATING_WITH_SINK_FUNC);
-  pygobject_register_sinkfunc(TEST_TYPE_FLOATING_WITH_SINK_FUNC, sink_test_floating_with_sink_func);
+                           &PyGObject_Type));
 
-  /* TestFloatingWithoutSinkFunc */
-  pygobject_register_class(d, "FloatingWithoutSinkFunc", TEST_TYPE_FLOATING_WITHOUT_SINK_FUNC,
-			   &PyTestFloatingWithoutSinkFunc_Type,
+  /* TestOwnedByLibrary */
+  PyTestOwnedByLibrary_Type.tp_flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE);
+  PyTestOwnedByLibrary_Type.tp_methods = (struct PyMethodDef*)_PyTestOwnedByLibrary_methods;
+  PyTestOwnedByLibrary_Type.tp_weaklistoffset = offsetof(PyGObject, weakreflist);
+  PyTestOwnedByLibrary_Type.tp_dictoffset = offsetof(PyGObject, inst_dict);
+  pygobject_register_class(d, "OwnedByLibrary", TEST_TYPE_OWNED_BY_LIBRARY,
+			   &PyTestOwnedByLibrary_Type,
 			   Py_BuildValue("(O)",
-					 &PyGObject_Type));
-  pyg_set_object_has_new_constructor(TEST_TYPE_FLOATING_WITHOUT_SINK_FUNC);
+                           &PyGObject_Type));
+
+  /* TestFloatingAndSunk */
+  PyTestFloatingAndSunk_Type.tp_flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE);
+  PyTestFloatingAndSunk_Type.tp_methods = (struct PyMethodDef*)_PyTestFloatingAndSunk_methods;
+  PyTestFloatingAndSunk_Type.tp_weaklistoffset = offsetof(PyGObject, weakreflist);
+  PyTestFloatingAndSunk_Type.tp_dictoffset = offsetof(PyGObject, inst_dict);
+  pygobject_register_class(d, "FloatingAndSunk", TEST_TYPE_FLOATING_AND_SUNK,
+                           &PyTestFloatingAndSunk_Type,
+                           Py_BuildValue("(O)",
+                           &PyGObject_Type));
 }
+PYGLIB_MODULE_END
 

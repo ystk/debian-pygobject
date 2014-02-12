@@ -1,44 +1,43 @@
 #!/usr/bin/env python
-import glob
+# -*- Mode: Python -*-
+
 import os
+import glob
 import sys
+
 import unittest
 
-import common
+if '--help' in sys.argv:
+    print("Usage: ./runtests.py <testfiles>")
+    sys.exit(0)
 
-program = None
-if len(sys.argv) == 3:
-    buildDir = sys.argv[1]
-    srcDir = sys.argv[2]
+mydir = os.path.dirname(os.path.abspath(__file__))
+
+# force untranslated messages, as we check for them in some tests
+os.environ['LC_MESSAGES'] = 'C'
+
+# Load tests.
+if 'TEST_NAMES' in os.environ:
+    names = os.environ['TEST_NAMES'].split()
+elif 'TEST_FILES' in os.environ:
+    names = []
+    for filename in os.environ['TEST_FILES'].split():
+        names.append(filename[:-3])
+elif len(sys.argv) > 1:
+    names = []
+    for filename in sys.argv[1:]:
+        names.append(filename.replace('.py', ''))
 else:
-    if len(sys.argv) == 2:
-        program = sys.argv[1]
-        if program.endswith('.py'):
-            program = program[:-3]
-    buildDir = '..'
-    srcDir = '.'
+    names = []
+    for filename in glob.iglob(os.path.join(mydir, 'test_*.py')):
+        names.append(os.path.basename(filename)[:-3])
 
-common.importModules(buildDir=buildDir,
-                     srcDir=srcDir)
-
-SKIP_FILES = ['common', 'runtests']
-
-dir = os.path.split(os.path.abspath(__file__))[0]
-os.chdir(dir)
-
-def gettestnames():
-    files = glob.glob('*.py')
-    names = map(lambda x: x[:-3], files)
-    map(names.remove, SKIP_FILES)
-    return names
-
-suite = unittest.TestSuite()
 loader = unittest.TestLoader()
+suite = loader.loadTestsFromNames(names)
 
-for name in gettestnames():
-    if program and program not in name:
-        continue
-    suite.addTest(loader.loadTestsFromName(name))
 
-testRunner = unittest.TextTestRunner()
-testRunner.run(suite)
+# Run tests.
+runner = unittest.TextTestRunner(verbosity=2)
+result = runner.run(suite)
+if not result.wasSuccessful():
+    sys.exit(1) # exit code so "make check" reports error
