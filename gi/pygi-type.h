@@ -14,9 +14,7 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301
- * USA
+ * License along with this library; if not, see <http://www.gnu.org/licenses/>.
  */
 
 #ifndef __PYGI_TYPE_H__
@@ -38,7 +36,6 @@ PyObject *_pygi_type_import_by_name (const char *namespace_, const char *name);
 PyObject *_pygi_type_import_by_gi_info (GIBaseInfo *info);
 
 PyObject *_pygi_type_get_from_g_type (GType g_type);
-
 
 G_END_DECLS
 

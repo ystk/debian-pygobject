@@ -3,48 +3,56 @@ Section: python
 Priority: optional
 Maintainer: Josselin Mouette <joss@debian.org>
 Uploaders: @GNOME_TEAM@
-Build-Depends: debhelper (>= 7),
+Build-Depends: debhelper (>= 9),
+               dpkg-dev (>= 1.16.1~),
+               gnome-common,
                gnome-pkg-tools (>= 0.10),
-               dh-autoreconf,
-               quilt,
                python-all-dev (>= 2.6.6-3~),
                python3-all-dev,
-               libglib2.0-dev (>= 2.31.0),
+               libglib2.0-dev (>= 2.38.0),
                libcairo2-dev,
                libffi-dev (>= 3.0.5),
-               gobject-introspection (>= 1.31.0),
-               libgirepository1.0-dev (>= 1.31.0),
+               gobject-introspection (>= 1.38.0),
+               libgirepository1.0-dev (>= 1.38.0),
                python-cairo-dev (>= 1.2.0),
-               python3-cairo-dev (>= 1.10.0),
+               python3-cairo-dev (>= 1.10.0+dfsg-3),
                xsltproc,
                xvfb,
                xauth,
                dbus-x11,
+               at-spi2-core,
                locales,
                docbook-xsl,
-               autotools-dev,
+               pep8,
+               pyflakes,
                python-all-dbg,
                python3-all-dbg,
                python-apt-dbg,
                python-cairo-dbg,
-               gir1.2-glib-2.0,
+               gir1.2-glib-2.0 (>= 1.38.0),
+               gir1.2-freedesktop (>= 1.38.0),
                gir1.2-gtk-3.0,
-               gir1.2-freedesktop
-X-Python-Version: >= 2.5
-Standards-Version: 3.9.3
-Vcs-Svn: svn://svn.debian.org/svn/pkg-gnome/desktop/unstable/pygobject
-Vcs-Browser: http://svn.debian.org/viewsvn/pkg-gnome/desktop/unstable/pygobject
+               dh-autoreconf
+X-Python-Version: >= 2.7
+Standards-Version: 3.9.5
+Vcs-Svn: svn://anonscm.debian.org/pkg-gnome/desktop/unstable/pygobject
+Vcs-Browser: http://anonscm.debian.org/viewvc/pkg-gnome/desktop/unstable/pygobject/
+XS-Testsuite: autopkgtest
+Homepage: https://wiki.gnome.org/PyGObject
 
 Package: python-gi
 Architecture: any
+Pre-Depends: ${misc:Pre-Depends}
 Depends: ${python:Depends},
          ${shlibs:Depends},
          ${misc:Depends},
-         gir1.2-glib-2.0 (>= 1.31.0)
+         gir1.2-glib-2.0 (>= 1.35.9)
 Provides: ${python:Provides}
 Suggests: python-gi-cairo
 Breaks: python-gobject (<< 3.0.2-4),
-        python-nautilus (<= 1.1-1)
+        python-nautilus (<= 1.1-1),
+        python-aptdaemon (<< 1.0),
+        software-center (<= 5.6.0-0ubuntu2)
 Replaces: python-gobject (<< 3.0.2-4)
 Description: Python 2.x bindings for gobject-introspection libraries
  GObject is an abstraction layer that allows programming with an object
@@ -57,10 +65,11 @@ Description: Python 2.x bindings for gobject-introspection libraries
 
 Package: python3-gi
 Architecture: any
+Pre-Depends: ${misc:Pre-Depends}
 Depends: ${python3:Depends},
          ${shlibs:Depends},
          ${misc:Depends},
-         gir1.2-glib-2.0 (>= 1.31.0)
+         gir1.2-glib-2.0 (>= 1.35.9)
 Conflicts: python3-gobject
 Provides: python3-gobject
 Replaces: python3-gobject
@@ -75,6 +84,7 @@ Description: Python 3 bindings for gobject-introspection libraries
 
 Package: python-gi-cairo
 Architecture: any
+Pre-Depends: ${misc:Pre-Depends}
 Depends: ${python:Depends},
          ${shlibs:Depends},
          ${misc:Depends},
@@ -95,6 +105,7 @@ Package: python-gi-dbg
 Section: debug
 Priority: extra
 Architecture: any
+Pre-Depends: ${misc:Pre-Depends}
 Depends: ${python:Depends},
          ${shlibs:Depends},
          ${misc:Depends},
@@ -115,6 +126,7 @@ Package: python3-gi-dbg
 Section: debug
 Priority: extra
 Architecture: any
+Pre-Depends: ${misc:Pre-Depends}
 Depends: ${python3:Depends},
          ${shlibs:Depends},
          ${misc:Depends},
@@ -134,12 +146,13 @@ Description: Python 3 bindings for gobject-introspection libraries (debug extens
  This package contains the extensions built for the Python 3 debug interpreter.
 
 Package: python-gi-dev
-Architecture: all
+Architecture: any
+Pre-Depends: ${misc:Pre-Depends}
 Depends: ${shlibs:Depends},
          ${misc:Depends},
-         python-gi (>= ${source:Version}),
-         python-gi (<< ${source:Version}.1~),
-         libglib2.0-dev (>= 2.24.0),
+         python-gi (= ${binary:Version}),
+         python3-gi (= ${binary:Version}),
+         libglib2.0-dev (>= 2.35.9),
          libffi-dev (>= 3.0.5)
 Breaks: python-gobject-dev (<< 3.0.2-4)
 Replaces: python-gobject-dev (<< 3.0.2-4)
@@ -151,10 +164,27 @@ Description: development headers for GObject Python bindings
  This package contains the development headers needed to build C extensions
  which use pygobject.
 
+Package: python3-gi-cairo
+Architecture: any
+Pre-Depends: ${misc:Pre-Depends}
+Depends: ${python3:Depends},
+         ${shlibs:Depends},
+         ${misc:Depends},
+         python3-gi (= ${binary:Version}),
+         python3-cairo (>= 1.10.0+dfsg-3~exp2)
+Description: Python 3 Cairo bindings for the GObject library
+ GObject is an abstraction layer that allows programming with an object
+ paradigm that is compatible with many languages. It is a part of Glib,
+ the core library used to build GTK+ and GNOME.
+ .
+ This package contains the Python 3 Cairo bindings for GObject. It is mostly
+ used by other bindings to map their GObjects to Python objects.
+
 Package: python-gobject
 Section: oldlibs
 Priority: extra
 Architecture: all
+Pre-Depends: ${misc:Pre-Depends}
 Depends: ${misc:Depends},
          python-gi (>= ${source:Version}),
          python-gobject-2
@@ -164,25 +194,11 @@ Description: Python 2.x bindings for GObject - transitional package
  is here for upgrade purposes only. You can remove it safely when 
  nothing else depends on it.
 
-Package: python3-gi-cairo
-Architecture: any
-Depends: ${python3:Depends},
-         ${shlibs:Depends},
-         ${misc:Depends},
-         python3-gi (= ${binary:Version}),
-         python3-cairo
-Description: Python 3 Cairo bindings for the GObject library
- GObject is an abstraction layer that allows programming with an object
- paradigm that is compatible with many languages. It is a part of Glib,
- the core library used to build GTK+ and GNOME.
- .
- This package contains the Python 3 Cairo bindings for GObject. It is mostly
- used by other bindings to map their GObjects to Python objects.
-
 Package: python-gobject-dbg
 Section: oldlibs
 Priority: extra
 Architecture: all
+Pre-Depends: ${misc:Pre-Depends}
 Depends: ${misc:Depends},
          python-gi-dbg (>= ${source:Version}),
          python-gobject-2-dbg
@@ -196,8 +212,10 @@ Package: python-gobject-dev
 Section: oldlibs
 Priority: extra
 Architecture: all
+Pre-Depends: ${misc:Pre-Depends}
 Depends: ${misc:Depends},
-         python-gi-dev (= ${source:Version}),
+         python-gi-dev (>= ${source:Version}),
+         python-gi-dev (<< ${source:Version}.1~),
          python-gobject-2-dev
 Description: Python 2.x development headers for GObject - transitional package 
  This package will bring development headers for the two versions of 

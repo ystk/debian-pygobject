@@ -19,14 +19,15 @@
 # USA
 
 from ..overrides import override
-from ..importer import modules
+from ..module import get_introspection_module
 
-GIMarshallingTests = modules['GIMarshallingTests']._introspection_module
+GIMarshallingTests = get_introspection_module('GIMarshallingTests')
 
 __all__ = []
 
 OVERRIDES_CONSTANT = 7
 __all__.append('OVERRIDES_CONSTANT')
+
 
 class OverridesStruct(GIMarshallingTests.OverridesStruct):
 
@@ -42,6 +43,7 @@ class OverridesStruct(GIMarshallingTests.OverridesStruct):
 
 OverridesStruct = override(OverridesStruct)
 __all__.append('OverridesStruct')
+
 
 class OverridesObject(GIMarshallingTests.OverridesObject):
 
@@ -61,6 +63,7 @@ class OverridesObject(GIMarshallingTests.OverridesObject):
         return self
 
     def method(self):
+        """Overridden doc string."""
         return GIMarshallingTests.OverridesObject.method(self) / 7
 
 OverridesObject = override(OverridesObject)

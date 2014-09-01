@@ -26,17 +26,17 @@
 
 #if PY_VERSION_HEX < 0x03000000
 #include <pycairo.h>
+static Pycairo_CAPI_t *Pycairo_CAPI;
 #else
 #include <pycairo/py3cairo.h>
 #endif
 
-static Pycairo_CAPI_t *Pycairo_CAPI;
 
 #include "pygi-foreign.h"
 
 #include <pyglib-python-compat.h>
 
-PyObject *
+static PyObject *
 cairo_context_to_arg (PyObject        *value,
                       GIInterfaceInfo *interface_info,
                       GITransfer       transfer,
@@ -55,17 +55,20 @@ cairo_context_to_arg (PyObject        *value,
     Py_RETURN_NONE;
 }
 
-PyObject *
-cairo_context_from_arg (GIInterfaceInfo *interface_info, gpointer data)
+static PyObject *
+cairo_context_from_arg (GIInterfaceInfo *interface_info,
+                        GITransfer       transfer,
+                        gpointer         data)
 {
     cairo_t *context = (cairo_t*) data;
 
-    cairo_reference (context);
+    if (transfer == GI_TRANSFER_NOTHING)
+        cairo_reference (context);
 
     return PycairoContext_FromContext (context, &PycairoContext_Type, NULL);
 }
 
-PyObject *
+static PyObject *
 cairo_context_release (GIBaseInfo *base_info,
                        gpointer    struct_)
 {
@@ -74,7 +77,7 @@ cairo_context_release (GIBaseInfo *base_info,
 }
 
 
-PyObject *
+static PyObject *
 cairo_surface_to_arg (PyObject        *value,
                       GIInterfaceInfo *interface_info,
                       GITransfer       transfer,
@@ -94,21 +97,109 @@ cairo_surface_to_arg (PyObject        *value,
     Py_RETURN_NONE;
 }
 
-PyObject *
-cairo_surface_from_arg (GIInterfaceInfo *interface_info, gpointer data)
+static PyObject *
+cairo_surface_from_arg (GIInterfaceInfo *interface_info,
+                        GITransfer       transfer,
+                        gpointer         data)
 {
     cairo_surface_t *surface = (cairo_surface_t*) data;
 
-    cairo_surface_reference (surface);
+    if (transfer == GI_TRANSFER_NOTHING)
+        cairo_surface_reference (surface);
 
     return PycairoSurface_FromSurface (surface, NULL);
 }
 
-PyObject *
+static PyObject *
 cairo_surface_release (GIBaseInfo *base_info,
                        gpointer    struct_)
 {
     cairo_surface_destroy ( (cairo_surface_t*) struct_);
+    Py_RETURN_NONE;
+}
+
+
+static PyObject *
+cairo_path_to_arg (PyObject        *value,
+                   GIInterfaceInfo *interface_info,
+                   GITransfer       transfer,
+                   GIArgument      *arg)
+{
+    cairo_path_t *path;
+
+    g_assert (transfer == GI_TRANSFER_NOTHING);
+
+    path = ( (PycairoPath*) value)->path;
+    if (!path) {
+        PyErr_SetString (PyExc_ValueError, "Path instance wrapping a NULL path");
+        return NULL;
+    }
+
+    arg->v_pointer = path;
+    Py_RETURN_NONE;
+}
+
+static PyObject *
+cairo_path_from_arg (GIInterfaceInfo *interface_info,
+                     GITransfer       transfer,
+                     gpointer         data)
+{
+    cairo_path_t *path = (cairo_path_t*) data;
+
+    if (transfer == GI_TRANSFER_NOTHING) {
+        PyErr_SetString(PyExc_TypeError, "Unsupported annotation (transfer none) for cairo.Path return");
+        return NULL;
+    }
+
+    return PycairoPath_FromPath (path);
+}
+
+static PyObject *
+cairo_path_release (GIBaseInfo *base_info,
+                    gpointer    struct_)
+{
+    cairo_path_destroy ( (cairo_path_t*) struct_);
+    Py_RETURN_NONE;
+}
+
+static PyObject *
+cairo_font_options_to_arg (PyObject        *value,
+                           GIInterfaceInfo *interface_info,
+                           GITransfer       transfer,
+                           GIArgument      *arg)
+{
+    cairo_font_options_t *font_options;
+
+    g_assert (transfer == GI_TRANSFER_NOTHING);
+
+    font_options = ( (PycairoFontOptions*) value)->font_options;
+    if (!font_options) {
+        PyErr_SetString (PyExc_ValueError, "FontOptions instance wrapping a NULL font_options");
+        return NULL;
+    }
+
+    arg->v_pointer = font_options;
+    Py_RETURN_NONE;
+}
+
+static PyObject *
+cairo_font_options_from_arg (GIInterfaceInfo *interface_info,
+                             GITransfer       transfer,
+                             gpointer         data)
+{
+    cairo_font_options_t *font_options = (cairo_font_options_t*) data;
+
+    if (transfer == GI_TRANSFER_NOTHING)
+        font_options = cairo_font_options_copy (font_options);
+
+    return PycairoFontOptions_FromFontOptions (font_options);
+}
+
+static PyObject *
+cairo_font_options_release (GIBaseInfo *base_info,
+                            gpointer    struct_)
+{
+    cairo_font_options_destroy ( (cairo_font_options_t*) struct_);
     Py_RETURN_NONE;
 }
 
@@ -118,7 +209,7 @@ PYGLIB_MODULE_START(_gi_cairo, "_gi_cairo")
 #if PY_VERSION_HEX < 0x03000000
     Pycairo_IMPORT;
 #else
-    Pycairo_CAPI = (Pycairo_CAPI_t*) PyCapsule_Import("cairo.CAPI", 0);
+    import_cairo();
 #endif
 
     if (Pycairo_CAPI == NULL)
@@ -135,5 +226,17 @@ PYGLIB_MODULE_START(_gi_cairo, "_gi_cairo")
                                   cairo_surface_to_arg,
                                   cairo_surface_from_arg,
                                   cairo_surface_release);
+
+    pygi_register_foreign_struct ("cairo",
+                                  "Path",
+                                  cairo_path_to_arg,
+                                  cairo_path_from_arg,
+                                  cairo_path_release);
+
+    pygi_register_foreign_struct ("cairo",
+                                  "FontOptions",
+                                  cairo_font_options_to_arg,
+                                  cairo_font_options_from_arg,
+                                  cairo_font_options_release);
 }
 PYGLIB_MODULE_END;

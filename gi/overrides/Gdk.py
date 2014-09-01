@@ -19,16 +19,20 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301
 # USA
 
-from ..overrides import override
-from ..importer import modules
-
 import sys
+import warnings
 
-Gdk = modules['Gdk']._introspection_module
+from ..overrides import override, strip_boolean_result
+from ..module import get_introspection_module
+from gi import PyGIDeprecationWarning
+
+Gdk = get_introspection_module('Gdk')
 
 __all__ = []
 
+
 class Color(Gdk.Color):
+    MAX_VALUE = 65535
 
     def __init__(self, red, green, blue):
         Gdk.Color.__init__(self)
@@ -36,14 +40,33 @@ class Color(Gdk.Color):
         self.green = green
         self.blue = blue
 
-    def __new__(cls, *args, **kwargs):
-        return Gdk.Color.__new__(cls)
-
     def __eq__(self, other):
         return self.equal(other)
 
     def __repr__(self):
-        return '<Gdk.Color(red=%d, green=%d, blue=%d)>' % (self.red, self.green, self.blue)
+        return 'Gdk.Color(red=%d, green=%d, blue=%d)' % (self.red, self.green, self.blue)
+
+    red_float = property(fget=lambda self: self.red / float(self.MAX_VALUE),
+                         fset=lambda self, v: setattr(self, 'red', int(v * self.MAX_VALUE)))
+
+    green_float = property(fget=lambda self: self.green / float(self.MAX_VALUE),
+                           fset=lambda self, v: setattr(self, 'green', int(v * self.MAX_VALUE)))
+
+    blue_float = property(fget=lambda self: self.blue / float(self.MAX_VALUE),
+                          fset=lambda self, v: setattr(self, 'blue', int(v * self.MAX_VALUE)))
+
+    def to_floats(self):
+        """Return (red_float, green_float, blue_float) triple."""
+
+        return (self.red_float, self.green_float, self.blue_float)
+
+    @staticmethod
+    def from_floats(red, green, blue):
+        """Return a new Color object from red/green/blue values from 0.0 to 1.0."""
+
+        return Color(int(red * Color.MAX_VALUE),
+                     int(green * Color.MAX_VALUE),
+                     int(blue * Color.MAX_VALUE))
 
 Color = override(Color)
 __all__.append('Color')
@@ -57,14 +80,32 @@ if Gdk._version == '3.0':
             self.blue = blue
             self.alpha = alpha
 
-        def __new__(cls, *args, **kwargs):
-            return Gdk.RGBA.__new__(cls)
-
         def __eq__(self, other):
             return self.equal(other)
 
         def __repr__(self):
-            return '<Gdk.Color(red=%f, green=%f, blue=%f, alpha=%f)>' % (self.red, self.green, self.blue, self.alpha)
+            return 'Gdk.RGBA(red=%f, green=%f, blue=%f, alpha=%f)' % (self.red, self.green, self.blue, self.alpha)
+
+        def __iter__(self):
+            """Iterator which allows easy conversion to tuple and list types."""
+
+            yield self.red
+            yield self.green
+            yield self.blue
+            yield self.alpha
+
+        def to_color(self):
+            """Converts this RGBA into a Color instance which excludes alpha."""
+
+            return Color(int(self.red * Color.MAX_VALUE),
+                         int(self.green * Color.MAX_VALUE),
+                         int(self.blue * Color.MAX_VALUE))
+
+        @classmethod
+        def from_color(cls, color):
+            """Returns a new RGBA instance given a Color instance."""
+
+            return cls(color.red_float, color.green_float, color.blue_float)
 
     RGBA = override(RGBA)
     __all__.append('RGBA')
@@ -79,11 +120,8 @@ if Gdk._version == '2.0':
             self.width = width
             self.height = height
 
-        def __new__(cls, *args, **kwargs):
-            return Gdk.Rectangle.__new__(cls)
-
         def __repr__(self):
-            return '<Gdk.Rectangle(x=%d, y=%d, width=%d, height=%d)>' % (self.x, self.y, self.height, self.width)
+            return 'Gdk.Rectangle(x=%d, y=%d, width=%d, height=%d)' % (self.x, self.y, self.height, self.width)
 
     Rectangle = override(Rectangle)
     __all__.append('Rectangle')
@@ -106,8 +144,10 @@ else:
             # Gdk.Window had to be made abstract,
             # this override allows using the standard constructor
             return Gdk.Window.new(parent, attributes, attributes_mask)
+
         def __init__(self, parent, attributes, attributes_mask):
             pass
+
         def cairo_create(self):
             return Gdk.cairo_create(self)
 
@@ -116,6 +156,7 @@ else:
 
 Gdk.EventType._2BUTTON_PRESS = getattr(Gdk.EventType, "2BUTTON_PRESS")
 Gdk.EventType._3BUTTON_PRESS = getattr(Gdk.EventType, "3BUTTON_PRESS")
+
 
 class Event(Gdk.Event):
     _UNION_MEMBERS = {
@@ -153,9 +194,6 @@ class Event(Gdk.Event):
 
     if Gdk._version == '2.0':
         _UNION_MEMBERS[Gdk.EventType.NO_EXPOSE] = 'no_expose'
-
-    def __new__(cls, *args, **kwargs):
-        return Gdk.Event.__new__(cls)
 
     def __getattr__(self, name):
         real_event = getattr(self, '_UNION_MEMBERS').get(self.type)
@@ -202,18 +240,6 @@ gsuccess_mask_funcs = ['get_state',
                        'get_coords',
                        'get_root_coords']
 
-def _gsuccess_mask(func):
-    def cull_success(*args):
-        result = func(*args)
-        success = result[0]
-        if success == False:
-            return None
-        else:
-            if len(result) == 2:
-                return result[1]
-            else:
-                return result[1:]
-    return cull_success
 
 for event_class in event_member_classes:
     override_class = type(event_class, (getattr(Gdk, event_class),), {})
@@ -227,7 +253,7 @@ for event_class in event_member_classes:
 
         # use the _gsuccess_mask decorator if this method is whitelisted
         if name in gsuccess_mask_funcs:
-            event_method = _gsuccess_mask(event_method)
+            event_method = strip_boolean_result(event_method)
         setattr(override_class, name, event_method)
 
     setattr(module, event_class, override_class)
@@ -235,13 +261,15 @@ for event_class in event_member_classes:
 
 # end GdkEvent overrides
 
+
 class DragContext(Gdk.DragContext):
     def finish(self, success, del_, time):
-        Gtk = modules['Gtk']._introspection_module
+        Gtk = get_introspection_module('Gtk')
         Gtk.drag_finish(self, success, del_, time)
 
 DragContext = override(DragContext)
 __all__.append('DragContext')
+
 
 class Cursor(Gdk.Cursor):
     def __new__(cls, *args, **kwds):
@@ -249,101 +277,120 @@ class Cursor(Gdk.Cursor):
         kwd_len = len(kwds)
         total_len = arg_len + kwd_len
 
-        def _new(cursor_type):
-            return cls.new(cursor_type)
-
-        def _new_for_display(display, cursor_type):
-            return cls.new_for_display(display, cursor_type)
-
-        def _new_from_pixbuf(display, pixbuf, x, y):
-            return cls.new_from_pixbuf(display, pixbuf, x, y)
-
-        def _new_from_pixmap(source, mask, fg, bg, x, y):
-            return cls.new_from_pixmap(source, mask, fg, bg, x, y)
-
-        _constructor = None
         if total_len == 1:
-            _constructor = _new
+            # Since g_object_newv (super.__new__) does not seem valid for
+            # direct use with GdkCursor, we must assume usage of at least
+            # one of the C constructors to be valid.
+            return cls.new(*args, **kwds)
+
         elif total_len == 2:
-            _constructor = _new_for_display
+            warnings.warn('Calling "Gdk.Cursor(display, cursor_type)" has been deprecated. '
+                          'Please use Gdk.Cursor.new_for_display(display, cursor_type). '
+                          'See: https://wiki.gnome.org/PyGObject/InitializerDeprecations',
+                          PyGIDeprecationWarning)
+            return cls.new_for_display(*args, **kwds)
+
         elif total_len == 4:
-            _constructor = _new_from_pixbuf
+            warnings.warn('Calling "Gdk.Cursor(display, pixbuf, x, y)" has been deprecated. '
+                          'Please use Gdk.Cursor.new_from_pixbuf(display, pixbuf, x, y). '
+                          'See: https://wiki.gnome.org/PyGObject/InitializerDeprecations',
+                          PyGIDeprecationWarning)
+            return cls.new_from_pixbuf(*args, **kwds)
+
         elif total_len == 6:
             if Gdk._version != '2.0':
                 # pixmaps don't exist in Gdk 3.0
                 raise ValueError("Wrong number of parameters")
-            _constructor = _new_from_pixmap
+
+            warnings.warn('Calling "Gdk.Cursor(source, mask, fg, bg, x, y)" has been deprecated. '
+                          'Please use Gdk.Cursor.new_from_pixmap(source, mask, fg, bg, x, y). '
+                          'See: https://wiki.gnome.org/PyGObject/InitializerDeprecations',
+                          PyGIDeprecationWarning)
+            return cls.new_from_pixmap(*args, **kwds)
+
         else:
             raise ValueError("Wrong number of parameters")
 
-        return _constructor(*args, **kwds)
-
-    def __init__(self, *args, **kwargs):
-        Gdk.Cursor.__init__(self)
 
 Cursor = override(Cursor)
 __all__.append('Cursor')
 
-_Gdk_color_parse = Gdk.color_parse
-@override(Gdk.color_parse)
-def color_parse(color):
-    success, color = _Gdk_color_parse(color)
-    if not success:
-        return None
-    return color
+color_parse = strip_boolean_result(Gdk.color_parse)
+__all__.append('color_parse')
+
+
+# Note, we cannot override the entire class as Gdk.Atom has no gtype, so just
+# hack some individual methods
+def _gdk_atom_str(atom):
+    n = atom.name()
+    if n:
+        return n
+    # fall back to atom index
+    return 'Gdk.Atom<%i>' % hash(atom)
+
+
+def _gdk_atom_repr(atom):
+    n = atom.name()
+    if n:
+        return 'Gdk.Atom.intern("%s", False)' % n
+    # fall back to atom index
+    return '<Gdk.Atom(%i)>' % hash(atom)
+
+
+Gdk.Atom.__str__ = _gdk_atom_str
+Gdk.Atom.__repr__ = _gdk_atom_repr
+
 
 # constants
 if Gdk._version >= '3.0':
     SELECTION_PRIMARY = Gdk.atom_intern('PRIMARY', True)
     __all__.append('SELECTION_PRIMARY')
-    
+
     SELECTION_SECONDARY = Gdk.atom_intern('SECONDARY', True)
     __all__.append('SELECTION_SECONDARY')
-    
+
     SELECTION_CLIPBOARD = Gdk.atom_intern('CLIPBOARD', True)
     __all__.append('SELECTION_CLIPBOARD')
-    
+
     TARGET_BITMAP = Gdk.atom_intern('BITMAP', True)
     __all__.append('TARGET_BITMAP')
-    
+
     TARGET_COLORMAP = Gdk.atom_intern('COLORMAP', True)
     __all__.append('TARGET_COLORMAP')
-    
+
     TARGET_DRAWABLE = Gdk.atom_intern('DRAWABLE', True)
     __all__.append('TARGET_DRAWABLE')
-    
+
     TARGET_PIXMAP = Gdk.atom_intern('PIXMAP', True)
     __all__.append('TARGET_PIXMAP')
-    
+
     TARGET_STRING = Gdk.atom_intern('STRING', True)
     __all__.append('TARGET_STRING')
-    
+
     SELECTION_TYPE_ATOM = Gdk.atom_intern('ATOM', True)
     __all__.append('SELECTION_TYPE_ATOM')
-    
+
     SELECTION_TYPE_BITMAP = Gdk.atom_intern('BITMAP', True)
     __all__.append('SELECTION_TYPE_BITMAP')
-    
+
     SELECTION_TYPE_COLORMAP = Gdk.atom_intern('COLORMAP', True)
     __all__.append('SELECTION_TYPE_COLORMAP')
-    
+
     SELECTION_TYPE_DRAWABLE = Gdk.atom_intern('DRAWABLE', True)
     __all__.append('SELECTION_TYPE_DRAWABLE')
-    
+
     SELECTION_TYPE_INTEGER = Gdk.atom_intern('INTEGER', True)
     __all__.append('SELECTION_TYPE_INTEGER')
-    
+
     SELECTION_TYPE_PIXMAP = Gdk.atom_intern('PIXMAP', True)
     __all__.append('SELECTION_TYPE_PIXMAP')
-    
+
     SELECTION_TYPE_WINDOW = Gdk.atom_intern('WINDOW', True)
     __all__.append('SELECTION_TYPE_WINDOW')
-    
+
     SELECTION_TYPE_STRING = Gdk.atom_intern('STRING', True)
     __all__.append('SELECTION_TYPE_STRING')
 
 import sys
 
 initialized, argv = Gdk.init_check(sys.argv)
-if not initialized:
-    raise RuntimeError("Gdk couldn't be initialized")

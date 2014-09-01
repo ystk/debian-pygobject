@@ -7,14 +7,11 @@
 
 #include <pyglib-python-compat.h>
 
-static PyTypeObject *_PyGObject_Type;
-#define PyGObject_Type (*_PyGObject_Type)
-
 static PyObject * _wrap_TestInterface__do_iface_method(PyObject *cls,
 						       PyObject *args,
 						       PyObject *kwargs);
 
-GType
+static GType
 test_type_get_type(void)
 {
     static GType gtype = 0;
@@ -322,6 +319,16 @@ test_double_callback (GObject *object, double d)
   return d;
 }
 
+static gint64
+test_int64_callback (GObject *object, gint64 i)
+{
+  g_return_val_if_fail (G_IS_OBJECT (object), -1);
+
+  if (i == G_MAXINT64)
+      return i-1;
+  return i;
+}
+
 static char *
 test_string_callback (GObject *object, char *s)
 {
@@ -339,7 +346,69 @@ test_object_callback (GObject *object, GObject *o)
   return o;
 }
 
-void
+static GParamSpec *
+test_paramspec_callback (GObject *object)
+{
+  g_return_val_if_fail (G_IS_OBJECT (object), NULL);
+
+  return g_param_spec_boolean ("test-param", "test", "test boolean", TRUE, G_PARAM_READABLE);
+}
+
+static GValue *
+test_gvalue_callback (GObject *object, const GValue *v)
+{
+  GValue *ret = g_malloc0 (sizeof (GValue));
+
+  g_return_val_if_fail (G_IS_OBJECT (object), NULL);
+  g_return_val_if_fail (G_IS_VALUE (v), NULL);
+
+  g_value_init (ret, G_VALUE_TYPE (v));
+  g_value_copy (v, ret);
+  return ret;
+}
+
+static GValue *
+test_gvalue_ret_callback (GObject *object, GType type)
+{
+  GValue *ret = g_malloc0 (sizeof (GValue));
+
+  g_return_val_if_fail (G_IS_OBJECT (object), NULL);
+
+  g_value_init (ret, type);
+
+  switch (type) {
+    case G_TYPE_INT:
+      g_value_set_int(ret, G_MAXINT);
+      break;
+    case G_TYPE_INT64:
+      g_value_set_int64(ret, G_MAXINT64);
+      break;
+    case G_TYPE_UINT:
+      g_value_set_uint(ret, G_MAXUINT);
+      break;
+    case G_TYPE_UINT64:
+      g_value_set_uint64(ret, G_MAXUINT64);
+      break;
+    case G_TYPE_STRING:
+      g_value_set_string(ret, "hello");
+      break;
+    default:
+      g_critical ("test_gvalue_ret_callback() does not support type %s", g_type_name (type));
+  }
+
+  return ret;
+}
+
+static GParamSpec *
+test_paramspec_in_callback (GObject *object, GParamSpec *p)
+{
+  g_return_val_if_fail (G_IS_OBJECT (object), NULL);
+  g_return_val_if_fail (G_IS_PARAM_SPEC (p), NULL);
+
+  return p;
+}
+
+static void
 connectcallbacks (GObject *object)
 {
 
@@ -374,12 +443,32 @@ connectcallbacks (GObject *object)
                     G_CALLBACK (test_double_callback), 
                     NULL);
   g_signal_connect (G_OBJECT (object),
+                    "test_int64",
+                    G_CALLBACK (test_int64_callback), 
+                    NULL);
+  g_signal_connect (G_OBJECT (object),
                     "test_string",
                     G_CALLBACK (test_string_callback), 
                     NULL);
   g_signal_connect (G_OBJECT (object),
                     "test_object",
                     G_CALLBACK (test_object_callback), 
+                    NULL);
+  g_signal_connect (G_OBJECT (object),
+                    "test_paramspec",
+                    G_CALLBACK (test_paramspec_callback), 
+                    NULL);
+  g_signal_connect (G_OBJECT (object),
+                    "test_gvalue",
+                    G_CALLBACK (test_gvalue_callback), 
+                    NULL);
+  g_signal_connect (G_OBJECT (object),
+                    "test_gvalue_ret",
+                    G_CALLBACK (test_gvalue_ret_callback), 
+                    NULL);
+  g_signal_connect (G_OBJECT (object),
+                    "test_paramspec_in",
+                    G_CALLBACK (test_paramspec_in_callback), 
                     NULL);
 }
 
@@ -451,7 +540,6 @@ _wrap_test_gerror_exception(PyObject *self, PyObject *args)
         return NULL;
     }	    
 
-    Py_DECREF(py_method);
     Py_DECREF(py_args);
     Py_DECREF(py_ret);
 
@@ -523,21 +611,11 @@ PYGLIB_MODULE_START(testhelper, "testhelper")
 {
   PyObject *m, *d;
   
-  g_thread_init(NULL);
   pygobject_init(-1, -1, -1);
 
   d = PyModule_GetDict(module);
 
-  if ((m = PyImport_ImportModule("gi._gobject")) != NULL) {
-    PyObject *moddict = PyModule_GetDict(m);
-    
-    _PyGObject_Type = (PyTypeObject *)PyDict_GetItemString(moddict, "GObject");
-    if (_PyGObject_Type == NULL) {
-      PyErr_SetString(PyExc_ImportError,
-		      "cannot import name GObject from gobject");
-      return PYGLIB_MODULE_ERROR_RETURN;
-    }
-  } else {
+  if ((m = PyImport_ImportModule("gi.repository.GObject")) == NULL) {
     PyErr_SetString(PyExc_ImportError,
 		    "could not import gobject");
     return PYGLIB_MODULE_ERROR_RETURN;

@@ -6,23 +6,21 @@ import sys
 # py3k has StringIO in a different module
 try:
     from StringIO import StringIO
+    StringIO  # pyflakes
 except ImportError:
     from io import StringIO
 
-# FIXME: we need a way to import the options module from a public module
-from gi._glib.option import OptionParser, OptionGroup, OptionValueError, \
-     make_option, BadOptionError
+from gi.repository import GLib
 
-from compathelper import _bytes
 
 class TestOption(unittest.TestCase):
     EXCEPTION_MESSAGE = "This callback fails"
 
     def setUp(self):
-        self.parser = OptionParser("NAMES...",
-                                     description="Option unit test")
+        self.parser = GLib.option.OptionParser("NAMES...",
+                                               description="Option unit test")
         self.parser.add_option("-t", "--test", help="Unit test option",
-                          action="store_false", dest="test", default=True)
+                               action="store_false", dest="test", default=True)
         self.parser.add_option("--g-fatal-warnings",
                                action="store_true",
                                dest="fatal_warnings",
@@ -32,22 +30,22 @@ class TestOption(unittest.TestCase):
         def option_callback(option, opt, value, parser):
             raise Exception(self.EXCEPTION_MESSAGE)
 
-        group = OptionGroup(
+        group = GLib.option.OptionGroup(
             "unittest", "Unit test options", "Show all unittest options",
-            option_list = [
-                make_option("-f", "-u", "--file", "--unit-file",
-                                   type="filename",
-                                   dest="unit_file",
-                                   help="Unit test option"),
-                make_option("--test-integer",
-                                   type="int",
-                                   dest="test_integer",
-                                   help="Unit integer option"),
-                make_option("--callback-failure-test",
-                                   action="callback",
-                                   callback=option_callback,
-                                   dest="test_integer",
-                                   help="Unit integer option"),
+            option_list=[
+                GLib.option.make_option("-f", "-u", "--file", "--unit-file",
+                                        type="filename",
+                                        dest="unit_file",
+                                        help="Unit test option"),
+                GLib.option.make_option("--test-integer",
+                                        type="int",
+                                        dest="test_integer",
+                                        help="Unit integer option"),
+                GLib.option.make_option("--callback-failure-test",
+                                        action="callback",
+                                        callback=option_callback,
+                                        dest="test_integer",
+                                        help="Unit integer option"),
             ])
         group.add_option("-t", "--test",
                          action="store_false",
@@ -57,55 +55,52 @@ class TestOption(unittest.TestCase):
         self.parser.add_option_group(group)
         return group
 
-    def testParseArgs(self):
+    def test_parse_args(self):
         options, args = self.parser.parse_args(
             ["test_option.py"])
-        self.failIf(args)
+        self.assertFalse(args)
 
         options, args = self.parser.parse_args(
             ["test_option.py", "foo"])
-        self.assertEquals(args, ["foo"])
+        self.assertEqual(args, [])
 
         options, args = self.parser.parse_args(
             ["test_option.py", "foo", "bar"])
-        self.assertEquals(args, ["foo", "bar"])
+        self.assertEqual(args, [])
 
-    def testParseArgsDoubleDash(self):
+    def test_parse_args_double_dash(self):
         options, args = self.parser.parse_args(
             ["test_option.py", "--", "-xxx"])
-        #self.assertEquals(args, ["-xxx"])
+        #self.assertEqual(args, ["-xxx"])
 
-    def testParseArgs(self):
-        options, args = self.parser.parse_args()
-
-    def testParseArgsGroup(self):
+    def test_parse_args_group(self):
         group = self._create_group()
 
         options, args = self.parser.parse_args(
             ["test_option.py", "--test", "-f", "test"])
 
-        self.failIf(options.test)
+        self.assertFalse(options.test)
         self.assertEqual(options.unit_file, "test")
 
-        self.failUnless(group.values.test)
-        self.failIf(self.parser.values.test)
+        self.assertTrue(group.values.test)
+        self.assertFalse(self.parser.values.test)
         self.assertEqual(group.values.unit_file, "test")
-        self.failIf(args)
+        self.assertFalse(args)
 
-    def testOptionValueError(self):
+    def test_option_value_error(self):
         self._create_group()
-        self.assertRaises(OptionValueError, self.parser.parse_args,
+        self.assertRaises(GLib.option.OptionValueError, self.parser.parse_args,
                           ["test_option.py", "--test-integer=text"])
 
-    def testBadOptionError(self):
-        self.assertRaises(BadOptionError,
+    def test_bad_option_error(self):
+        self.assertRaises(GLib.option.BadOptionError,
                           self.parser.parse_args,
                           ["test_option.py", "--unknwon-option"])
 
-    def testOptionGroupConstructor(self):
-        self.assertRaises(TypeError, OptionGroup)
+    def test_option_group_constructor(self):
+        self.assertRaises(TypeError, GLib.option.OptionGroup)
 
-    def testStandardError(self):
+    def test_standard_error(self):
         self._create_group()
         sio = StringIO()
         old_stderr = sys.stderr

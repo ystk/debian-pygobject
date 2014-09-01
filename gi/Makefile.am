@@ -1,7 +1,8 @@
+PLATFORM_VERSION = 3.0
+
 SUBDIRS = \
 	repository \
 	overrides \
-        _glib \
 	_gobject
 
 extension_cppflags = \
@@ -10,7 +11,8 @@ extension_cppflags = \
 
 extension_ldflags = \
 	-module \
-	-avoid-version
+	-avoid-version \
+	-shrext $(PYTHON_SO)
 
 if OS_WIN32
 # Windows requires Python modules to be explicitly linked to libpython.
@@ -20,32 +22,59 @@ extension_libadd = \
 	$(PYTHON_LIBS)
 
 extension_ldflags += \
-	-no-undefined \
-	-shrext ".pyd"
+	-no-undefined
+endif
+
+pkgincludedir = $(includedir)/pygobject-$(PLATFORM_VERSION)
+if WITH_COMMON
+pkginclude_HEADERS = pygobject.h
 endif
 
 pygidir = $(pyexecdir)/gi
 
-pygi_PYTHON = \
-	__init__.py \
-	types.py \
-	module.py \
-	importer.py \
-	pygtkcompat.py
-
 pygi_LTLIBRARIES = _gi.la
 
 _gi_la_SOURCES = \
+	gobjectmodule.c \
+	pygboxed.c \
+	pygboxed.h \
+	pygenum.c \
+	pygenum.h \
+	pygflags.c \
+	pygflags.h \
+	pyginterface.c \
+	pyginterface.h \
+	pygobject.c \
+	pygobject.h \
+	pygobject-private.h \
+	pygparamspec.c \
+	pygparamspec.h \
+	pygpointer.c \
+	pygpointer.h \
+	pygtype.c \
+	pygtype.h \
+	glibmodule.c \
+	pygoptioncontext.c \
+	pygoptioncontext.h \
+	pygoptiongroup.c \
+	pygoptiongroup.h \
+	pygspawn.c \
+	pygspawn.h \
+	pyglib.c \
+	pyglib.h \
+	pyglib-private.h \
+	pyglib-python-compat.h \
+	gimodule.c \
 	pygi-repository.c \
 	pygi-repository.h \
 	pygi-info.c \
 	pygi-info.h \
 	pygi-foreign.c \
 	pygi-foreign.h \
-	pygi-foreign-gvariant.c \
-	pygi-foreign-gvariant.h \
 	pygi-struct.c \
 	pygi-struct.h \
+	pygi-source.c \
+	pygi-source.h \
 	pygi-argument.c \
 	pygi-argument.h \
 	pygi-type.c \
@@ -54,8 +83,8 @@ _gi_la_SOURCES = \
 	pygi-boxed.h \
 	pygi-closure.c \
 	pygi-closure.h \
-	pygi-callbacks.c \
-	pygi-callbacks.h \
+	pygi-ccallback.c \
+	pygi-ccallback.h \
 	pygi.h \
 	pygi-private.h \
 	pygi-property.c \
@@ -63,28 +92,41 @@ _gi_la_SOURCES = \
 	pygi-signal-closure.c \
 	pygi-signal-closure.h \
 	pygobject-external.h \
-	gimodule.c \
 	pygi-invoke.c \
 	pygi-invoke.h \
 	pygi-invoke-state-struct.h \
 	pygi-cache.h \
 	pygi-cache.c \
-	pygi-marshal-from-py.c \
-	pygi-marshal-from-py.h \
-	pygi-marshal-to-py.c \
-	pygi-marshal-to-py.h \
 	pygi-marshal-cleanup.c \
-	pygi-marshal-cleanup.h
+	pygi-marshal-cleanup.h \
+	pygi-basictype.c \
+	pygi-basictype.h \
+	pygi-list.c \
+	pygi-list.h \
+	pygi-array.c \
+	pygi-array.h \
+	pygi-error.c \
+	pygi-error.h \
+	pygi-object.c \
+	pygi-object.h \
+	pygi-value.c \
+	pygi-value.h \
+	pygi-enum-marshal.c \
+	pygi-enum-marshal.h \
+	pygi-struct-marshal.c \
+	pygi-struct-marshal.h \
+	pygi-hashtable.c \
+	pygi-hashtable.h
 _gi_la_CFLAGS = \
+	$(extension_cppflags) \
+	$(GLIB_CFLAGS) \
 	$(GI_CFLAGS)
 _gi_la_CPPFLAGS = \
-	$(extension_cppflags) \
-	-I$(top_srcdir)/gi/_glib \
-	-I$(top_srcdir)/gi/_gobject
+	$(extension_cppflags)
 _gi_la_LIBADD = \
 	$(extension_libadd) \
-	$(GI_LIBS) \
-	$(top_builddir)/gi/_glib/libpyglib-gi-2.0-@PYTHON_BASENAME@.la
+	$(GLIB_LIBS) \
+	$(GI_LIBS)
 _gi_la_LDFLAGS = \
 	$(extension_ldflags) \
 	-export-symbols-regex "init_gi|PyInit__gi"
@@ -99,9 +141,7 @@ _gi_cairo_la_CFLAGS = \
 	$(GI_CFLAGS) \
 	$(PYCAIRO_CFLAGS)
 _gi_cairo_la_CPPFLAGS = \
-	$(extension_cppflags) \
-	-I$(top_srcdir)/gi/_glib \
-	-I$(top_srcdir)/gi/_gobject
+	$(extension_cppflags)
 _gi_cairo_la_LIBADD = \
 	$(extension_libadd) \
 	$(GI_LIBS) \
@@ -114,22 +154,11 @@ _gi_cairo_la_LDFLAGS = \
 # This is to ensure we have a symlink to the .so in the
 # build directory, which the Python interpreter can load
 # directly without having to know how to parse .la files.
-.la.so:
-	$(LN_S) .libs/$@ $@ || true
+%$(PYTHON_SO): %.la
+	$(LN_S) -f .libs/$@ $@
 
-# if we build in a separate tree, we need to symlink the *.py files from the
-# source tree; Python does not accept the extensions and modules in different
-# paths
-build_pylinks:
-	for f in $(pygi_PYTHON); do \
-	    [ -e $(builddir)/$$f ] || $(LN_S) $(srcdir)/$$f $(builddir)/$$f; \
-	done
+all-local: $(LTLIBRARIES:.la=$(PYTHON_SO))
 
-all-local: $(LTLIBRARIES:.la=.so) build_pylinks
-
-check-local: $(LTLIBRARIES:.la=.so) build_pylinks
+check-local: $(LTLIBRARIES:.la=$(PYTHON_SO))
 clean-local:
-	rm -f $(LTLIBRARIES:.la=.so)
-
-
--include $(top_srcdir)/git.mk
+	rm -f $(LTLIBRARIES:.la=$(PYTHON_SO))

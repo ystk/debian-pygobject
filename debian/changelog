@@ -1,3 +1,337 @@
+pygobject (3.12.1-1) unstable; urgency=medium
+
+  * New upstream bug fix release.
+  * Upload to unstable.
+
+ -- Martin Pitt <mpitt@debian.org>  Tue, 15 Apr 2014 09:21:00 +0200
+
+pygobject (3.12.0-1) experimental; urgency=medium
+
+  * New upstream stable release for GNOME 3.12.
+
+ -- Martin Pitt <mpitt@debian.org>  Mon, 24 Mar 2014 12:25:58 +0100
+
+pygobject (3.11.91-1) experimental; urgency=medium
+
+  * New upstream release.
+  * Bump glib and gobject-introspection build depends as per upstream
+    configure.ac.
+  * Drop 00git_non_recursive_make_python.patch, fixed upstream.
+  * debian/*.install: Drop libpyglib-gi-*.so, these disappeared upstream.
+  * debian/tests/control: Add missing build-essential dep for the "build" test.
+  * debian/rules: Fix cleaning.
+
+ -- Martin Pitt <mpitt@debian.org>  Thu, 06 Mar 2014 10:30:47 +0100
+
+pygobject (3.10.2-2) unstable; urgency=medium
+
+  [ Colin Watson ]
+  * Fix building for multiple Python 3 versions.
+  * 00git_non_recursive_make_python.patch: Avoid clash between gi/types.py and
+    the Python standard library when installing, which broke installation with
+    Python 3.4 (https://bugzilla.gnome.org/show_bug.cgi?id=721025).
+
+ -- Martin Pitt <mpitt@debian.org>  Fri, 10 Jan 2014 11:57:34 +0100
+
+pygobject (3.10.2-1) unstable; urgency=low
+
+  * New upstream stable release.
+  * Bump Standards-Version to 3.9.5, no changes necessary.
+  * debian/rules: Fix typo which caused the tests not to run on non-BSD
+    platforms.
+
+ -- Martin Pitt <mpitt@debian.org>  Fri, 22 Nov 2013 07:26:32 +0100
+
+pygobject (3.10.1-1) unstable; urgency=low
+
+  [ Jackson Doak ]
+  * debian/control.in: 
+    - Add homepage field
+    - Use canonical VCS fields
+    - B-dep on dh-autoreconf
+  * debian/rules: 
+    - Add autoreconf
+    - Enable hardening
+  * debian/watch: Add support for more file formats
+
+  [ Martin Pitt ]
+  * New upstream bug fix release.
+  * Add gnome-common build dependency so that autoreconf can actually work.
+
+ -- Martin Pitt <mpitt@debian.org>  Mon, 14 Oct 2013 13:32:02 +0200
+
+pygobject (3.10.0-1) unstable; urgency=low
+
+  * New upstream release.
+  * debian/control.in: Bump glib and g-i dependencies for new release.
+  * debian/control.in: Drop explicit python3-dbg dependency, dh-python got
+    fixed now (see #704579).
+  * debian/control.in: Add at-spi2-core build dependency, as apparently this
+    is somehow needed on the buildds (not reproducible in sbuild).
+    (Closes: #715536)
+  * debian/control.in: Add Breaks for older python-aptdaemon and
+    software-center (Ubuntu specific) to avoid potential crash caused by new
+    python-gi with old python-aptdaemon. (LP: #1173249)
+  * debian/rules: Stop renaming the *.so files, upstream does it correctly
+    now.
+
+ -- Martin Pitt <mpitt@debian.org>  Tue, 24 Sep 2013 09:37:30 +0200
+
+pygobject (3.8.3-1) unstable; urgency=low
+
+  * New upstream bug fix release.
+
+ -- Martin Pitt <mpitt@debian.org>  Fri, 05 Jul 2013 08:02:14 +0200
+
+pygobject (3.8.2-1) unstable; urgency=low
+
+  * Reset watch file to look for stable releases only.
+  * New upstream bug fix release.
+  * Re-enable 01_cairo_region.patch, now that a fixed py3cairo landed in
+    unstable.
+
+ -- Martin Pitt <mpitt@debian.org>  Wed, 15 May 2013 08:54:32 +0200
+
+pygobject (3.8.1-3) unstable; urgency=low
+
+  * debian/rules:
+    + Don't abort if the test suite fails on hurd.
+    + We build for all the available python flavours. Previously we
+      were removing the prefix to which we install before installing
+      each flavour. We didn't notice any problems because we were
+      building only once for python3, but now that we build for 3.2
+      and 3.3, let's not remove the python3.2 bits when we install
+      the 3.3 stuff. This fixes pygobject on python3.2. Closes: #707318.
+    + Stop running the test suite on kfreebsd as it currently hangs
+      (see #707733).
+
+ -- Emilio Pozuelo Monfort <pochu@debian.org>  Sat, 11 May 2013 17:22:49 +0200
+
+pygobject (3.8.1-2) unstable; urgency=low
+
+  * Merge experimental branch, upload to unstable.
+  * Disable FTBFS on test failures on kfreebsd-*.
+  * Disable 01_cairo_region.patch for now, until experimental py3cairo gets
+    into unstable.
+
+ -- Martin Pitt <mpitt@debian.org>  Wed, 08 May 2013 07:30:48 +0200
+
+pygobject (3.8.1-1) experimental; urgency=low
+
+  * New upstream bug fix release.
+
+ -- Martin Pitt <mpitt@debian.org>  Tue, 16 Apr 2013 10:26:54 +0200
+
+pygobject (3.8.0-2) experimental; urgency=low
+
+  * debian/tests/python[23]-dbg: Redirect stderr to stdout, to avoid the
+    "[xxx refs]" error message failing the tests.
+  * Bump Standards-Version to 3.9.4. No changes necessary.
+  * Have failing tests fail the build except on s390x and mipsel, where they
+    currently fail.
+  * debian/control.in: Add explicit python3-dbg dependency to python3-gi-dbg,
+    to work around dh_python3 bug #704579.
+
+ -- Martin Pitt <mpitt@debian.org>  Wed, 03 Apr 2013 10:04:37 +0200
+
+pygobject (3.8.0-1) experimental; urgency=low
+
+  [ Emilio Pozuelo Monfort ]
+  * New upstream release.
+  * debian/rules:
+    + Unconditionally run the tests again, since the problem is not
+      kernel related.
+  * debian/patches/01_cairo_region.patch,
+    debian/control.in:
+    + Add a foreign type for cairo_region_t. Bump py3cairo build/binary
+      dependencies. (LP: #1028115, bgo #667959). Thanks to Martin Pitt
+      for this change.
+
+  [ Martin Pitt ]
+  * debian/rules: Set $HOME to debian/tmp/home, so that the testsuite has a
+    writeable home directory for D-BUS sockets and XDG data. This fixes the
+    eternal hangs in sbuild.
+
+ -- Emilio Pozuelo Monfort <pochu@debian.org>  Tue, 26 Mar 2013 10:15:24 +0100
+
+pygobject (3.7.92-3) experimental; urgency=low
+
+  [ Martin Pitt ]
+  * debian/rules: The test suite causes an eternal hang on Debian's buildds,
+    presumably due to running on very old kernels (2.6.32). This needs more
+    debugging, but skip the tests for kernels < 3.4 for now.
+
+ -- Sjoerd Simons <sjoerd@debian.org>  Sun, 24 Mar 2013 09:01:32 +0100
+
+pygobject (3.7.92-2) experimental; urgency=low
+
+  * debian/control.in:
+    + Bump gobject-introspection packages minimum build dependency
+      in an attempt to fix the test suite in the buildds where it's
+      currently hanging.
+
+ -- Emilio Pozuelo Monfort <pochu@debian.org>  Tue, 19 Mar 2013 14:06:39 +0100
+
+pygobject (3.7.92-1) experimental; urgency=low
+
+  * New upstream release.
+
+ -- Emilio Pozuelo Monfort <pochu@debian.org>  Mon, 18 Mar 2013 20:59:27 +0100
+
+pygobject (3.7.91.1-1) experimental; urgency=low
+
+  * New upstream release.
+    - Works nicely with GLib >= 2.35.4. Closes: #702603.
+    - debian/control.in:
+      + Update build dependencies.
+  * debian/python3-gi.lintian-overrides:
+    - Also override dev-pkg-without-shlib-symlink for python3-gi.
+
+ -- Emilio Pozuelo Monfort <pochu@debian.org>  Tue, 12 Mar 2013 14:30:53 +0100
+
+pygobject (3.4.2-3) experimental; urgency=low
+
+  [ Martin Pitt ]
+  * debian/control.in: Make python-gi-dev Arch: any, as it now uses multiarch
+    paths for the pkg-config file.
+  * debian/control.in: Put transitional packages into section oldlibs, and
+    priority extra. Thanks lintian.
+  * debian/control.in: Fix non-bin-NMUable dependency of python-gobject-dev.
+  * Add lintian overrides to suppress the package-name-doesnt-match-sonames
+    warnings.
+  * Add lintian override for "dbg-package-missing-depends python-gobject-dbg";
+    this is a transitional package only.
+  * Bump g-i build dependency to >= 1.34.2 to ensure the tests are working.
+  * Add autopkgtests for the -dbg flavours of Python 2 and 3.
+  * debian/control.in: Have python-gi-dev depend on python3-gi, too.
+    (LP: #1101683)
+
+  [ Josselin Mouette ]
+  * Enable again gtk3 on m68k.
+  * Add missing dependency python3-gi-cairo → python3-gi. (Closes: #673213)
+
+  [ Michael Biebl ]
+  * Stop using a doc symlink for the dbg package. The space savings are
+    negligible and they are prone to cause problems. In case of
+    python-gobject-dbg, which was converted to a transitional package, the
+    symlink was mistakenly converted to a real directory which isn't handled
+    nicely by dpkg. (Closes: #700779)
+  * Use strict dependencies in python-gi-dev as the package is now
+    Architecture: any
+  * Tighten the dependency on python-gi-dev for python-gobject-dev.
+
+ -- Michael Biebl <biebl@debian.org>  Thu, 21 Feb 2013 23:48:57 +0100
+
+pygobject (3.4.2-2) experimental; urgency=low
+
+  * Drop quilt (not necessary, we are using 3.0 (quilt) source format), and
+    dh_autoreconf (we have no patches).
+  * Greatly simplify debian/rules, by switching to dh7 build system and
+    factorizing the per-flavor rules in a simpler and better way. Also move to
+    dh compat 9 to get multiarch compatible library directories.
+  * debian/control.in: Bump g-i requirement according to upstream
+    configure.ac.
+  * debian/control.in: Drop support for Python 2.6. It's going to be dropped
+    after Wheezy anyway, it receives zero testing by upstream and will soon be
+    dropped upstream anyway.
+  * debian/rules: Use py3versions --supported instead of --requested; the
+    former is broken right now and we don't request particular versions anyway.
+  * debian/control.in: Add missing ${misc:Pre-Depends} and versioned dpkg-dev
+    build dependency.
+
+ -- Martin Pitt <mpitt@debian.org>  Tue, 27 Nov 2012 16:15:23 +0100
+
+pygobject (3.4.2-1) experimental; urgency=low
+
+  * New upstream release.
+
+ -- Martin Pitt <mpitt@debian.org>  Tue, 13 Nov 2012 05:57:56 +0100
+
+pygobject (3.4.1.1-1) experimental; urgency=low
+
+  [ Martin Pitt ]
+  * New upstream release.
+  * debian/control.in: Bump g-i dependencies according to configure.ac.
+  * debian/rules: Remove moving of site-packages, this was fixed upstream now.
+
+  [ Matthias Klose ]
+  * Fix renaming of python3 extensions.
+  * Configure with --disable-silent-rules.
+  * debian/rules (clean): Remove __pycache__ directories.
+
+ -- Martin Pitt <mpitt@debian.org>  Mon, 22 Oct 2012 12:23:17 +0200
+
+pygobject (3.4.1-1) experimental; urgency=low
+
+  * New upstream bug fix release.
+  * debian/rules: Update handling of site-packages directory, as this version
+    now ships an .egg-info.
+
+ -- Martin Pitt <mpitt@debian.org>  Tue, 16 Oct 2012 07:18:20 +0200
+
+pygobject (3.4.0-1) experimental; urgency=low
+
+  * New upstream release.
+
+ -- Martin Pitt <mpitt@debian.org>  Mon, 24 Sep 2012 09:43:47 +0200
+
+pygobject (3.3.92-1) experimental; urgency=low
+
+  * New upstream release.
+
+ -- Martin Pitt <mpitt@debian.org>  Mon, 17 Sep 2012 23:07:55 +0200
+
+pygobject (3.3.91-1) experimental; urgency=low
+
+  * New upstream release.
+  * debian/control.in: Bump g-i build dependencies as per configure.ac.
+  * debian/control.in: Bump X-Python-Version to >= 2.6. pygobject hasn't
+    worked with 2.5 for quite a while.
+
+ -- Martin Pitt <mpitt@debian.org>  Tue, 04 Sep 2012 12:47:21 +0200
+
+pygobject (3.3.90-1) experimental; urgency=low
+
+  * New upstream release.
+
+ -- Martin Pitt <mpitt@debian.org>  Mon, 20 Aug 2012 23:23:43 +0200
+
+pygobject (3.3.4-1) experimental; urgency=low
+
+  * New upstream release.
+  * Add debian/tests/: autopkgtest for using GI modules with Python 2 and 3.
+  * debian/control.in: Add XS-Testsuite header as per current DEP-8.
+  * Add debian/tests/build: Build and run a program against pygobject, to
+    verify that the headers and pkg-config file are installed correctly.
+  * debian/watch: Look for unstable versions in experimental branch.
+
+ -- Martin Pitt <mpitt@debian.org>  Sun, 22 Jul 2012 11:13:46 +0200
+
+pygobject (3.3.3.1-1) experimental; urgency=low
+
+  * New upstream release.
+
+ -- Martin Pitt <mpitt@debian.org>  Mon, 25 Jun 2012 16:42:57 +0200
+
+pygobject (3.3.2-1) experimental; urgency=low
+
+  * New upstream release.
+  * debian/control.in: Bump gobject-introspection build dep to >= 1.33.2 to
+    ensure we have the necessary API for the tests.
+
+ -- Martin Pitt <mpitt@debian.org>  Mon, 11 Jun 2012 16:30:43 +0200
+
+pygobject (3.3.1-1) experimental; urgency=low
+
+  * debian/control.in: Update Vcs-* for experimental branch.
+  * New upstream release. The 3.3.x series is targetted at GNOME 3.6, but will
+    also work with GNOME 3.4. There are a few small API changes/fixes, though.
+  * debian/rules: Bump shlib version.
+  * debian/control.in: Add pep8 and pyflakes build dependencies, now used by
+    the test suite.
+
+ -- Martin Pitt <mpitt@debian.org>  Tue, 15 May 2012 16:00:59 +0200
+
 pygobject (3.2.2-2) unstable; urgency=low
 
   [ Josselin Mouette ]

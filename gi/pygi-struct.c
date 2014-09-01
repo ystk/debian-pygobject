@@ -16,27 +16,48 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301
- * USA
+ * License along with this library; if not, see <http://www.gnu.org/licenses/>.
  */
 
 #include "pygi-private.h"
+#include "pygobject-private.h"
 
-#include <pygobject.h>
 #include <girepository.h>
 #include <pyglib-python-compat.h>
+
+
+static GIBaseInfo *
+_struct_get_info (PyObject *self)
+{
+    PyObject *py_info;
+    GIBaseInfo *info = NULL;
+
+    py_info = PyObject_GetAttrString (self, "__info__");
+    if (py_info == NULL) {
+        return NULL;
+    }
+    if (!PyObject_TypeCheck (py_info, &PyGIStructInfo_Type) &&
+            !PyObject_TypeCheck (py_info, &PyGIUnionInfo_Type)) {
+        PyErr_Format (PyExc_TypeError, "attribute '__info__' must be %s or %s, not %s",
+                      PyGIStructInfo_Type.tp_name,
+                      PyGIUnionInfo_Type.tp_name,
+                      Py_TYPE(py_info)->tp_name);
+        goto out;
+    }
+
+    info = ( (PyGIBaseInfo *) py_info)->info;
+    g_base_info_ref (info);
+
+out:
+    Py_DECREF (py_info);
+
+    return info;
+}
 
 static void
 _struct_dealloc (PyGIStruct *self)
 {
-    GIBaseInfo *info = _pygi_object_get_gi_info (
-                           (PyObject *) self,
-                           &PyGIStructInfo_Type);
-
-    PyObject_GC_UnTrack ( (PyObject *) self);
-
-    PyObject_ClearWeakRefs ( (PyObject *) self);
+    GIBaseInfo *info = _struct_get_info ( (PyObject *) self );
 
     if (info != NULL && g_struct_info_is_foreign ( (GIStructInfo *) info)) {
         pygi_struct_foreign_release (info, ( (PyGPointer *) self)->pointer);
@@ -44,7 +65,9 @@ _struct_dealloc (PyGIStruct *self)
         g_free ( ( (PyGPointer *) self)->pointer);
     }
 
-    g_base_info_unref (info);
+    if (info != NULL) {
+        g_base_info_unref (info);
+    }
 
     Py_TYPE( (PyGPointer *) self )->tp_free ( (PyObject *) self);
 }
@@ -65,7 +88,7 @@ _struct_new (PyTypeObject *type,
         return NULL;
     }
 
-    info = _pygi_object_get_gi_info ( (PyObject *) type, &PyGIStructInfo_Type);
+    info = _struct_get_info ( (PyObject *) type );
     if (info == NULL) {
         if (PyErr_ExceptionMatches (PyExc_AttributeError)) {
             PyErr_Format (PyExc_TypeError, "missing introspection information");
@@ -74,6 +97,13 @@ _struct_new (PyTypeObject *type,
     }
 
     size = g_struct_info_get_size ( (GIStructInfo *) info);
+    if (size == 0) {
+        PyErr_Format (PyExc_TypeError,
+            "struct cannot be created directly; try using a constructor, see: help(%s.%s)",
+            g_base_info_get_namespace (info),
+            g_base_info_get_name (info));
+        goto out;
+    }
     pointer = g_try_malloc0 (size);
     if (pointer == NULL) {
         PyErr_NoMemory();

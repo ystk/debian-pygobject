@@ -1,31 +1,723 @@
-3.2.2  14-May-2012
+3.12.1  14-Apr-2014
+        - Fix crash with type checking invalid GObject arguments
+          (Simon Feltman) (#727604)
+        - Do not leak info of destroy notify (Paolo Borelli)
+
+3.12.0  24-Mar-2014
+
+3.11.92 17-Mar-2014
+        - configure.ac: Remove option to build without libffi (Simon Feltman)
+        - docs: Standardize Python doc strings (Simon Feltman)
+        - Fix reference leaks with (transfer full) foreign struct returns
+          (Owen W. Taylor) (#726206)
+
+3.11.91 03-Mar-2014
+        - Use ffi_call directly instead of g_callable_info_invoke
+          (Simon Feltman) (#723642)
+        - configure.ac: Use -std=c90 and error on declaration-after-statement
+          (Simon Feltman)
+        - Fix Build on Visual Studio (Chun-wei Fan) (#725122)
+
+3.11.90 17-Feb-2014
+        - Use GObject type checking for instance arguments (Simon Feltman) (#724009)
+        - configure.ac: post release version bump to 3.11.90 (Simon Feltman)
+
+3.11.5  03-Feb-2014
+        - cache refactoring: Move all cache marshalers into files based on type
+          (Simon Feltman) (#709700)
+        - tests: Add test for an owned boxed struct passed in a callback
+          (Mike Gorse) (#722899)
+        - build: Add --without-common configure option for package maintainers
+          (Patrick Welche) (#721646)
+        - demo: Add TreeModel interface implementation demonstration
+          (Simon Feltman)
+        - build: Set PLATFORM_VERSION again to 3.0 (Colin Walters)
+        - tests: Run PyFlakes and PEP8 only on SUBDIRS (Simon Feltman)
+        - Merge static PyGLib and PyGObject modules into PyGI
+          (Simon Feltman) (#712197)
+        - Add test for callback user data arguments with following arguments
+          (Martin Pitt) (#722104)
+
+3.11.4  13-Jan-2014
+        - overrides: Fix __repr__ for various Gdk structs (Simon Feltman)
+        - Add enum and flags member methods (Simon Feltman) (#693099)
+        - python.m4: g/c JD_PYTHON_CHECK_VERSION (Patrick Welche) (#721662)
+        - Support union creation with PyGIStruct (Simon Feltman)
+        - docs: List constructors in object and struct doc strings
+          (Simon Feltman) (#708060)
+        - docs: Fix array length argument skipping with preceding out arguments
+        - docs: Add return values and skip implicit out arguments in functions
+          (Simon Feltman) (#697356)
+        - docs: Skip implicit array length args when building function doc
+          strings (Simon Feltman) (#697356)
+        - gtk-demo: Add CSS demos (Gian Mario Tagliaretti) (#719722)
+        - build: Avoid clash between gi/types.py and stdlib
+          (Colin Watson) (#721025)
+
+3.11.3  16-Dec-2013
+        - Replace usage of PyGIBoxed_Type with PyGIStruct_Type
+          (Simon Feltman) (#581525)
+
+3.11.2  17-Nov-2013
+        - gkt-demo: Change main info/source notebook into a GtkStack (Simon Feltman)
+        - Add deprecation warnings and cleanup class initializer overrides (Simon Feltman) (#705810)
+        - Fix dir method for static GParamSpec in Python 3 (Simon Feltman)
+        - Remove overzealous argument checking for callback userdata (Simon Feltman) (#711173)
+
+3.11.1  28-Oct-2013
+        - Fix toggleref safety problems by always enabling the GIL
+	  (Simon Feltman) (#709223)
+	- Add consistent GLib.MainLoop SIGINT cleanup (Simon Feltman) (#710978)
+        - docs: Add a keyword value of None for allow-none annotations
+	  (Simon Feltman) (#640812)
+	- Remove overrides for supporting pre-3.10 GObject signal functions
+	  (Simon Feltman)
+	- Add threads_init back as a requirement for non-Python threaded repos
+	  (Simon Feltman) (#710447)
+	- Add dir method to GObject props accessor (Simon Feltman) (#705754)
+        - Remove PyGObjectWeakRef now that g_binding_unbind exists
+	  (Simon Feltman) (#699571)
+        - Fix lots of memory leaks leaks (Simon Feltman) (#693402, #709397)
+        - Add support for variable user data arguments (Simon Feltman) (#640812)
+        - Bump glib and g-i dependencies to latest stable. (Martin Pitt)
+	- Fix TypeError when setting drag target_list to None (Nuno Araujo)
+	  (#709926)
+	- Use qdata for wrapper retrieval in toggle reference notifications
+	  (Simon Feltman) (#709223)
+        - Expose all GI enum and flags types (Simon Feltman) (#709008)
+        - Add support for default arguments annotated with allow-none
+	  (Simon Feltman) (#640812)
+	- Refactor argument cache handling (Simon Feltman) (#640812)
+        - Remove support for allowing PyObjects as void pointers
+	  (Simon Feltman) (#688081)
+
+3.10.0  23-Sep-2013
+        - Fix test_gi.TestProjectVersion.test_version_str() (Martin Pitt)
+
+3.9.92  16-Sep-2013
+        - Fix union argument regression when marshaling from python
+	  (Simon Feltman) (#703873)
+	- Fix GLib.Source sub-classing with initializer args (Simon Feltman)
+	  (#707904)
+	- Copy __doc__ when wrapping function (Vratislav Podzimek)
+
+3.9.91  02-Sep-2013
+	- Fix GObject signal methods to work with new annotations
+	  (Simon Feltman) (#707280)
+	- Fix build on C89 Compilers (Chun-wei Fan) (#707264)
+	- Change boxed type checking in marshaling to use __gtype__ attribute
+	  (Simon Feltman) (#707140)
+	- Use G_IS_VALUE for checking return values in closure marshaling
+	  (Simon Feltman) (#707170)
+	- Fix PEP-8 errors in propertyhelper.py (Yanko Kaneti) (#706319)
+
+3.9.90  19-Aug-2013
+	- Create GLib.Pid in the same way on python 2 and 3 (Benjamin Berg)
+	  (#705451)
+	- Use PyLong_Type.tp_new for GLib.Pid (Benjamin Berg) (#705451)
+	- Add accumulator and accu_data arguments to GObject.Signal decorator
+	  (Simon Feltman) (#705533)
+	- Pass return values through the GObject.Signal.emit wrapper
+	  (Simon Feltman) (#705530)
+
+3.9.5   29-Jul-2013
+        - Ensure exceptions set in closure out argument marshaling are printed
+          (Simon Feltman) (#705064)
+        - Always raise OverflowError for marshaling integers from Python
+          (not ValueError or OverflowError) (Simon Feltman) (#705057)
+        - Cleanup invoke args and kwargs combiner code (Simon Feltman) (#640812)
+        - gtk-demo: Change demo to use Gtk.Application (Simon Feltman) (#698547)
+        - Add callable and descriptor protocols to PyGICallableInfo
+          (Simon Feltman) (#704037)
+        - Unify basic type argument marshaling for methods, closures, and
+          properties (Simon Feltman) (#693405)
+        - Override GValue.set/get_boxed with static C marshaler
+          (Simon Feltman) (#688081, #693405)
+        - Add deprecation warning for marshaling arbitrary objects as pointers
+          (Simon Feltman) (#688081)
+        - Replace usage of __import__ with importlib.import_module
+          (Simon Feltman) (#682320)
+        - Always unref the GiTypeInfo when generating an argument cache
+          (Mike Gorse) (#703973)
+        - Unref interface info when fetching enums or flags
+          (Mike Gorse) (#703960)
+        - Speed up MRO calculation (Daniel Drake) (#703829)
+        - Add GIL safety to pyobject_copy for copying boxed PyObjects
+          (Simon Feltman) (#688081)
+        - Add marshaling of GI_TYPE_TAG_VOID held in a GValue to int
+          (Simon Feltman) (#694233)
+        - GTK overrides: Make connect_signals handle tuple
+          (Cole Robinson) (#693994)
+        - Re-add support for passing GValue's by reference
+          (Simon Feltman) (#701058)
+        - Clear return value of closures to zero when an exception occurs
+          (Simon Feltman) (#702552)
+        - Don't use doctest syntax in docstrings for examples
+          (Martin Pitt) (#701009)
+        - Add support for properties of type GInterface
+          (Garrett Regier) (#703456)
+        - pygtkcompat: Fix for missing methods on Windows
+          (Martin Pitt) (#702787)
+        - gi/pygi-info.c: Avoid C99-style variable declaration
+          (Chun-wei Fan) (#702786)
+
+3.9.2   28-May-2013
+	- examples/option.py: Port to GI and Python 3 (Martin Pitt)
+        - Fix vfunc info search for classes with multiple inheritance
+	  (Simon Feltman) (#700092)
+        - Fix closure argument conversion for enum and flag in args
+	  (Simon Feltman)
+        - Fix marshaling Python to FFI return value for enum and flags
+	  (Simon Feltman)
+	- Remove half implemented GC in PyGIBaseInfo, PyGIStruct, and PyGIBoxed
+	  (Simon Feltman) (#677091)
+	- Replace usage of pyg_begin_allow_threads with Py_BEGIN_ALLOW_THREADS
+	  (Simon Feltman) (#699440)
+	- Remove and deprecate API for setting of thread blocking functions
+	  (Simon Feltman) (#699440)
+
+3.9.1   30-Apr-2013
+	- gtk-demo: Wrap description strings at 80 characters (Simon Feltman)
+	  (#698547)
+	- gtk-demo: Use textwrap to reformat description for Gtk.TextView
+	  (Simon Feltman) (#698547)
+	- gtk-demo: Use GtkSource.View for showing source code (Simon Feltman)
+	  (#698547)
+	- Use correct class for GtkEditable's get_selection_bounds() function
+	  (Mike Ruprecht) (#699096)
+	- Test results of g_base_info_get_name for NULL (Simon Feltman)
+	  (#698829)
+	- Add ObjectInfo.get_class_struct() (Johan Dahlin) (#685218)
+	- Change interpretation of NULL pointer field from None to 0
+	  (Simon Feltman) (#698366)
+	- Do not build tests until needed (Sobhan Mohammadpour) (#698444)
+	- pygi-convert: Support toolbar styles (Kai Willadsen) (#698477)
+	- pygi-convert: Support new-style constructors for Gio.File
+	  (Kai Willadsen) (#698477)
+	- pygi-convert: Add some support for recent manager constructs
+	  (Kai Willadsen) (#698477)
+	- pygi-convert: Don't transform arbitrary keysym imports
+	  (Kai Willadsen) (#698477)
+	- Remove Python keyword escapement in Repository.find_by_name
+	  (Simon Feltman) (#697363)
+	- Optimize signal lookup in gi repository (Daniel Drake) (#696143)
+	- Optimize connection of Python-implemented signals (Daniel Drake)
+	  (#696143)
+	- Consolidate signal connection code (Daniel Drake) (#696143)
+	- Fix setting of struct property values (Daniel Drake)
+	- Optimize property get/set when using GObject.props (Daniel Drake)
+	  (#696143)
+	- configure.ac: Fix PYTHON_SO with Python3.3 (Christoph Reiter)
+	  (#696646)
+	- Simplify registration of custom types (Daniel Drake) (#696143)
+	- pygi-convert.sh: Add GStreamer rules (Christoph Reiter) (#697951)
+	- pygi-convert: Add rule for TreeModelFlags (Jussi Kukkonen)
+	- Unify GI marshalling code (Simon Feltman) (#693405)
+	- Use distutils.sysconfig to retrieve the python include path.
+	  (Christoph Reiter) (#696648)
+	- Support PEP 3149 (ABI version tagged .so files) (Christoph Reiter)
+	  (#696646)
+	- Fix stack corruption due to incorrect format for argument parser
+	  (Simon Feltman) (#696892)
+	- Deprecate GLib and GObject threads_init (Simon Feltman) (#686914)
+	- Drop support for Python 2.6 (Martin Pitt)
+	- Remove static PollFD bindings (Martin Pitt) (#686795)
+	- Drop test skipping due to too old g-i (Martin Pitt)
+	- Bump glib and g-i dependencies (Martin Pitt)
+
+3.8.0   25-Mar-2013
+	- tests: Fix incorrect assumption when testing pyglib version
+	  (Simon Feltman)
+
+3.7.92  18-Mar-2013
+	- Fix stack smasher when marshaling enums as a vfunc return value
+	  (Simon Feltman) (#637832)
+	- Change base class of PyGIDeprecationWarning based on minor version
+	  (Simon Feltman) (#696011)
+	- autogen.sh: Source gnome-autogen to fix out of source builddir (Alban
+	  Browaeys) (#694889)
+        - pygtkcompat: Make gdk.Window.get_geometry return tuple of 5
+	  (Simon Feltman)
+        - pygtkcompat: Initialize hint to zero in set_geometry_hints
+	  (Simon Feltman)
+        - Remove incorrect bounds check with property helper flags
+	  (Simon Feltman)
+	- Fix crash when setting property of type object to an incorrect type
+	  (Simon Feltman) (#695420)
+	- Give more informative error when setting property to incorrect type
+	  (Simon Feltman) (#695420)
+
+3.7.91.1 05-Mar-2013
+        - Revert "Drop gi.overrides.overridefunc()" (Martin Pitt) (#695199)
+
+3.7.91  04-Mar-2013
+        - Fix many memory leaks (#675726, #693402, #691501, #510511, #691501,
+	  #672224, and several more which are detected by our test suite)
+	  (Martin Pitt)
+        - Dot not clobber original Gdk/Gtk functions with overrides
+	  (Martin Pitt) (#686835)
+	- Optimize GValue.get/set_value by setting GValue.g_type to a local
+	  (Simon Feltman) (#694857)
+        - Run tests with G_SLICE=debug_blocks (Martin Pitt) (#691501)
+	- Add override helper for stripping boolean returns (Martin Pitt)
+	  (#694431)
+	- Drop obsolete pygobject_register_sinkfunc() declaration (Martin Pitt)
+	  (#639849)
+	- Fix marshalling of C arrays with explicit length in signal arguments
+	  (Martin Pitt) (#662241)
+	- Fix signedness, overflow checking, and 32 bit overflow of GFlags
+	  (Martin Pitt) (#693121)
+	- gi/pygi-marshal-from-py.c: Fix build on Visual C++ (Chun-wei Fan)
+	  (#692856)
+	- Raise DeprecationWarning on deprecated callables (Martin Pitt)
+	  (#665084)
+	- pygtkcompat: Add Widget.window, scroll_to_mark, and window methods
+	  (Simon Feltman) (#694067)
+	- pygtkcompat: Add Gtk.Window.set_geometry_hints which accepts keyword
+	  arguments (Simon Feltman) (#694067)
+        - Ship pygobject.doap for autogen.sh (Martin Pitt) (#694591)
+	- Fix crashes in various GObject signal handler functions
+	  (Simon Feltman) (#633927)
+	- pygi-closure: Protect the GSList prepend with the GIL (Olivier Crête)
+	  (#684060)
+	- generictreemodel: Fix bad default return type for get_column_type
+	  (Simon Feltman)
+
+3.7.90  19-Feb-2013
+	- overrides: Fix inconsistencies with drag and drop target list API
+	  (Simon Feltman) (#680640)
+	- pygtkcompat: Add pygtk compatible GenericTreeModel implementation
+	  (Simon Feltman) (#682933)
+	- overrides: Add support for iterables besides tuples for TreePath
+	  creation (Simon Feltman) (#682933)
+	- Prefix __module__ attribute of function objects with gi.repository
+	  (Niklas Koep) (#693839)
+	- configure.ac: only enable code coverage when available, to fix
+	  autogen.sh with older gnome-commons (Jonathan Ballet) (#693328)
+	- Correctly set properties on object with statically defined properties
+	  (Jonathan Ballet) (#693618)
+	- autogen.sh: Use gnome-autogen.sh (Martin Pitt) (#693328)
+	- Fix reference leaks with transient floating objects (Simon Feltman)
+	  (#687522)
+
+3.7.5.1 05-Feb-2013
+        - Fix ABI break with pygobject.h from 3.7.5 (Simon Feltman) (#675726)
+
+3.7.5   04-Feb-2013
+	- Move various signal methods from static bindings to GI
+	  (Simon Feltman) (#692918)
+	- GLib overrides: Support unpacking 'maybe' variants (Paolo Borelli)
+	  (#693032)
+	- Fix ref count leak when creating pygobject wrappers for input args
+	  (Mike Gorse) (#675726)
+	- Prefix names of typeless enums and flags for GType registration
+	  (Simon Feltman) (#692515)
+	- Fix compilation with non-C99 compilers such as Visual C++
+	  (Chun-wei Fan) (#692856)
+        - gi/overrides/Glib.py: Fix running on Windows/non-Unix (Chun-wei Fan)
+	- Do not immediately initialize Gdk and Gtk on import (Martin Pitt)
+	  (#692300)
+        - Accept ±inf and NaN as float and double values (Martin Pitt) (#692381)
+        - Fix repr() of GLib.Variant (Martin Pitt)
+        - Fix gtk-demo for Python 3 (Martin Pitt)
+        - Define GObject.TYPE_VALUE gtype constant (Martin Pitt)
+	- gobject: Go through introspection on property setting (Olivier Crête)
+	  (#684062)
+	- Clean up caller-allocated GValues and their memory (Mike Gorse)
+	  (#691820)
+        - Use GNOME_COMPILE_WARNINGS from gnome-common (Martin Pitt)
+
+3.7.4   14-Jan-2013
+        - Allow setting values through GtkTreeModelFilter (Simonas Kazlauskas)
+          (#689624)
+        - Support GParamSpec signal arguments from Python (Martin Pitt)
+          (#683099)
+        - pygobject_emit(): Fix cleanup on error (Martin Pitt)
+        - Add signal emission methods to TreeModel which coerce the path
+          argument (Simon Feltman) (#682933)
+        - Add override for GValue (Bastian Winkler) (#677473)
+        - Mark caller-allocated boxed structures as having a slice allocated
+          (Mike Gorse) (#699501)
+        - pygi-property: Support boxed GSList/GList types (Olivier Crête)
+          (#684059)
+        - tests: Add missing backwards compat methods for Python 2.6
+          (Martin Pitt) (#691646)
+        - Allow setting TreeModel values to None (Simon Feltman) (#684094)
+        - Set clean-up handler for marshalled arrays (Mike Gorse) (#691509)
+        - Support setting string fields in structs (Vadim Rutkovsky) (#678401)
+        - Permit plain integers for "gchar" values (Martin Pitt)
+        - Allow single byte values for int8 types (Martin Pitt) (#691524)
+        - Fix invalid memory access handling errors when registering an enum
+          type (Mike Gorse)
+        - Fix (out) arguments in callbacks (Martin Pitt)
+        - Fix C to Python marshalling of struct pointer arrays (Martin Pitt)
+        - Don't let Property.setter() method names define property names
+          (Martin Pitt) (#688971)
+        - Use g-i stack allocation API (Martin Pitt) (#615982)
+        - pyg_value_from_pyobject: support GArray (Ray Strode) (#690514)
+        - Fix obsolete automake macros (Marko Lindqvist) (#691101)
+        - Change dynamic enum and flag gtype creation to use namespaced naming
+          (Simon Feltman) (#690455)
+        - Fix Gtk.UIManager.add_ui_from_string() override for non-ASCII chars
+          (Jonathan Ballet) (#690329)
+        - Don't dup strings before passing them to type registration functions
+          (Mike Gorse) (#690532)
+        - Fix marshalling of arrays of boxed struct values (Carlos Garnacho)
+          (#656312)
+
+3.7.3   17-Dec-2012
+	- Add support for caller-allocated GArray out arguments (Martin Pitt)
+	  (#690041)
+	- [API add] Re-support calling GLib.io_add_watch with an fd or Python
+	  file (Martin Pitt)
+        - pygtkcompat: Work around IndexError on large flags (Martin Pitt)
+        - Fix pyg_value_from_pyobject() range check for uint (Martin Pitt)
+        - Fix tests to work with g-i 1.34.2 (Martin Pitt)
+	- Fix wrong refcount for GVariant property defaults (Martin Pitt)
+	  (#689267)
+        - Fix array arguments on 32 bit architectures (Martin Pitt)
+        - Add backwards compatible API for GLib.unix_signal_add_full()
+	  (Martin Pitt)
+	- Drop MININT64/MAXUINT64 workaround, current g-i gets this right now
+	  (Martin Pitt)
+        - Fix maximum and minimum ranges of TYPE_(U)INT64 properties
+	  (Simonas Kazlauskas) (#688949)
+        - Ship pygi-convert.sh in tarballs (Martin Pitt) (#688697)
+
+3.7.2   19-Nov-2012
+	- [API change] Drop almost all static GLib bindings and replace them
+	  with proper introspection. This gets rid of several cases where the
+	  PyGObject API was not matching the real GLib API, makes the full GLib
+	  API available through introspection, and makes the code smaller,
+	  easier to maintain. For backwards compatibility, overrides are
+	  provided to emulate the old static binding API, but this will throw a
+	  PyGIDeprecationWarning for the cases that diverge from the official
+	  API (in particular, GLib.io_add_watch() and GLib.child_watch_add()
+	  being called without a priority argument). (Martin Pitt, Simon Feltman)
+	- [API change] Deprecate calling GLib API through the GObject
+	  namespace. This has always been a misnomer with introspection, and
+	  will be removed in a later version; for now this throws a
+	  PyGIDeprecationWarning.
+        - [API change] Do not bind gobject_get_data() and gobject_set_data().
+	  These have been deprecated for a cycle, now dropped entirely.
+	  (Steve Frécinaux) (#641944)
+	- [API change] Deprecate void pointer fields as general PyObject
+	  storage. (Simon Feltman) (#683599)
+        - Add support for GVariant properties (Martin Pitt)
+        - Add type checking to GVariant argument assignment (Martin Pitt)
+        - Fix marshalling of arrays of struct pointers to Python (Carlos Garnacho) (#678620)
+        - Fix Gdk.Atom to have a proper str() and repr() (Martin Pitt) (#678620)
+        - Make sure g_value_set_boxed does not cause a buffer overrun with GStrvs (Simon Feltman) (#688232)
+        - Fix leaks with GValues holding boxed and object types (Simon Feltman) (#688137)
+        - Add doc strings showing method signatures for gi methods (Simon Feltman) (#681967)
+        - Set Property instance doc string and blurb to getter doc string (Simon Feltman) (#688025)
+        - Add GObject.G_MINSSIZE (Martin Pitt)
+        - Fix marshalling of GByteArrays (Martin Pitt)
+        - Fix marshalling of ssize_t to smaller ints (Martin Pitt)
+	- Add support for lcov code coverage, and add a lot of missing
+	  GIMarshallingTests and g-i Regress tests. (Martin Pitt)
+        - pygi-convert: remove deprecated GLib → GObject conversions (Jose Rostagno)
+        - Add support for overriding GObject.Object (Simon Feltman) (#672727)
+        - Add --with-python configure option (Martin Pitt)
+	- Do not prefer unversioned "python" when configuring, as some distros
+	  have "python" as Python 3. Use Python 3 by default if available. Add
+	  --with-python configure option as an alternative to setting $PYTHON,
+	  whic is more discoverable. (Martin Pitt)
+        - Fix property lookup in class hierarchy (Daniel Drake) (#686942)
+        - Move property and signal creation into _class_init() (Martin Pitt) (#686149)
+        - Fix duplicate symbols error on OSX (John Ralls)
+        - [API add] Add get_introspection_module for getting un-overridden modules (Simon Feltman) (#686828)
+        - Work around wrong 64 bit constants in GLib Gir (Martin Pitt) (#685022)
+        - Mark GLib.Source.get_current_time() as deprecated (Martin Pitt)
+        - Fix OverflowError in source_remove() (Martin Pitt) (#684526)
+
+3.7.1   22-Oct-2012
+        - Bump version to 3.7.1; let's follow the real GNOME versioning from
+          now on (Martin Pitt)
+        - Change install_properties to not use getattr on classes
+          (Simon Feltman) (#686559)
+        - Move property install function into propertyhelper.py (Simon Feltman)
+          (#686559)
+        - Fix Signal decorator to not use base class gsignals dict
+          (Simon Feltman) (#686496)
+        - tests: Consistently use GLib.MainLoop (Martin Pitt)
+        - Install the .egg-info files into correct multilib directory
+          (Kalev Lember) (#686315)
+        - Fix leaked vfunc return values (Simon Feltman) (#686140)
+        - Skip Regress tests with --disable-cairo (Martin Pitt) (#685094)
+        - Fix leak with python callables as closure argument. (Simon Feltman)
+          (#685598)
+        - Gio overrides: Handle setting GSettings enum keys (Martin Pitt)
+          (#685947)
+        - tests: Check reading GSettings enums in Gio overrides (Martin Pitt)
+        - Fix unsigned values in GArray/GList/GSList/GHash (Martin Pitt)
+          (#685860)
+        - _pygi_marshal_from_py_uint64(): Use correct data type in py2.7 check
+          (Alban Browaeys) (#685000)
+        - Install an .egg-info file (Johan Dahlin) (#680138)
+        - PyGProps_getattro(): Fix GObjectClass leak (Johan Dahlin) (#685218)
+        - pygobject.c: Don't leak GObjectClass reference (Olivier Crête)
+          (#684062)
+        - Fix memory leak in _pygi_argument_to_array() (Alban Browaeys)
+          (#685082)
+        - Fix error messages for out of range numbers (Martin Pitt) (#684314)
+        - Kill dbus-daemon after running tests (Martin Pitt) (#685009)
+        - GVariant overrides: Support empty tuple arrays (Martin Pitt)
+          (#684928)
+        - tests: Fix wrong return type in test_int64_callback() (Martin Pitt)
+          (#684700)
+        - Fix GValue marshalling of long and unsigned long (Giovanni Campagna)
+          (#684331)
+        - Clean up deprecation message for assigning gpointers to objects.
+          (Simon Feltman) (#683599)
+        - pygi-property: Lookup property in base classes of non-introspected
+          types (Olivier Crête) (#684058)
+
+3.4.0   24-Sep-2012
+        - Bump g-i dependency to 1.33.14 (Martin Pitt)
+
+3.3.92  17-Sep-2012
+        - [API add] Add ObjectInfo.get_abstract method (Simon Feltman) (#675581)
+	- Add deprecation warning when setting gpointers to anything other than
+	  int. (Simon Feltman) (#683599)
+	- argument: Fix 64bit integer convertion from GValue (Nicolas Dufresne)
+	  (#683596)
+        - Improve setting pointer fields/arguments to NULL using None
+	  (Simon Feltman) (#683150)
+        - Bump g-i dependency to 1.33.10 (Martin Pitt)
+        - Fix -uninstalled.pc.in file (Thibault Saunier) (#683379)
+	- Various test suite additions and improvements (Martin Pitt)
+
+3.3.91  03-Sep-2012
+        - Fix exception test case for Python 2 (Martin Pitt)
+        - Bump g-i dependency to >= 1.3.9 (Martin Pitt)
+        - Show proper exception when trying to allocate a disguised struct
+          (Martin Pitt) (#639972)
+        - Support marshalling GParamSpec signal arguments (Mark Nauwelaerts)
+          (#683099)
+        - Add test for a signal that returns a GParamSpec (Martin Pitt)
+          (#683265)
+        - [API add] Add Signal class for adding and connecting custom signals.
+          (Simon Feltman) (#434924)
+        - Fix pygtkcompat's Gtk.TreeView.insert_column_with_attributes()
+          (Martin Pitt)
+        - Add override for Gtk.TreeView.insert_column_with_attributes()
+          (Marta Maria Casetti) (#679415)
+        - .gitignore: Add missing built files (Martin Pitt)
+        - Ship tests/gi in tarball (Martin Pitt)
+        - Split test_overrides.py (Martin Pitt) (#683188)
+        - _pygi_argument_to_object(): Clean up array unmarshalling (Martin Pitt)
+        - Fix memory leak in _pygi_argument_to_object() (Alban Browaeys)
+          (#682979)
+        - Fix setting pointer fields/arguments to NULL using None.
+          (Simon Feltman) (#683150)
+        - Fix for python 2.6, officially drop support for < 2.6 (Martin Pitt)
+          (#682422)
+        - Allow overrides in other directories than gi itself
+          (Thibault Saunier) (#680913)
+        - Clean up sys.path handling in tests (Simon Feltman) (#680913)
+        - Fix dynamic creation of enum and flag gi types for Python 3.3
+          (Simon Feltman) (#682323)
+        - [API add] Override g_menu_item_set_attribute (Paolo Borelli) (#682436)
+
+3.3.90  20-Aug-2012
+        - Implement marshalling for GParamSpec (Mathieu Duponchelle) (#681565)
+        - Fix erronous import statements for Python 3.3 (Simon Feltman)
+          (#682051)
+        - Do not fail tests if pyflakes or pep8 are not installed (Martin Pitt)
+        - Fix PEP-8 whitespace checking and issues in the code (Martin Pitt)
+        - Fix unmarshalling of gssize (David Malcolm) (#680693)
+        - Fix various endianess errors (David Malcolm) (#680692)
+        - Gtk overrides: Add TreeModelSort.__init__(self, model)
+	  (Simon Feltman) (#681477)
+        - Convert Gtk.CellRendererState in the pygi-convert script
+	  (Manuel Quiñones) (#681596)
+
+3.3.5   06-Aug-2012
+        - Fix list marshalling on big-endian machines (Martin Pitt)
+          (#680693)
+        - Beautify class/interface type mismatch error messages (Martin Pitt)
+        - Skip instead of fail tests which need Pango, Atk, Gdk, Gtk (Martin Pitt)
+        - [API add] pygtkcompat: Add more pixbuf creation functions (Simon Feltman)
+          (#680814)
+        - Fix error messages on interface/class type mismatches (Martin Pitt)
+        - Fix crash when returning (False, None) from Gtk.TreeModel.do_get_iter() (Simon Feltman)
+          (#680812)
+        - Add test case for Gtk.TextIter.forward_search() (Martin Pitt)
+          (#679415)
+        - pygi-info.c: Robustify pointer arithmetic (Martin Pitt)
+        - Add set_attributes() override to Gtk.TreeViewColumn (Manuel Quiñones)
+        - Gtk overrides: Add TreePath.__getitem__() (Simon Feltman)
+          (#680353)
+        - Fix property type mapping from int to TYPE_INT for python3. (Simon Feltman)
+          (#679939)
+        - Convert Gtk.DestDefaults constants in pygi-convert.sh script (Manuel Quiñones)
+          (#680259)
+        - Convert all Gdk.WindowState constants in pygi-convert.sh (Manuel Quiñones)
+          (#680257)
+        - [API add] Add API for checking pygobject's version (Joe R. Nassimian)
+          (#680176)
+        - pygi-convert.sh: Add some missing Gdk.CursorTypes (Manuel Quiñones)
+          (#680050)
+        - pygi-convert.sh: convert rsvg.Handle(data=...) (Manuel Kaufmann)
+          (#680092)
+
+3.3.4   16-Jul-2012
+        - pygi-convert.sh: Drop bogus filter_new() conversion (Martin Pitt)
+          (#679999)
+        - Fix help() for GI modules (Martin Pitt) (#679804)
+        - Skip gi.CallbackInfo objects from a module's dir() (Martin Pitt)
+          (#679804)
+        - Fix __path__ module attribute (Martin Pitt)
+        - pygi-convert.sh: Fix some child → getChild() false positives
+	  (Joe R. Nassimian) (#680004)
+	- Fix array handling for interfaces, properties, and signals
+	  (Mikkel Kamstrup Erlandsen) (#667244)
+	- Add conversion of the Gdk.PropMode constants to pygi-convert.sh
+	  script (Manuel Quiñones) (#679775)
+	- Add the same rules for pack_start to convert pack_end (Manuel
+	  Quiñones) (#679760)
+        - Add error-checking for the case where _arg_cache_new() fails
+	  (Dave Malcolm) (#678914)
+	- Add conversion of the Gdk.NotifyType constants to pygi-convert.sh
+	  script (Manuel Quiñones) (#679754)
+	- Fix PyObject_Repr and PyObject_Str reference leaks (Simon Feltman)
+          (#675857)
+	- [API add] Gtk overrides: Add TreePath.__len__() (Martin Pitt)
+          (#679199)
+        - GLib.Variant: Fix repr(), add proper str() (Martin Pitt) (#679336)
+        - m4/python.m4: Update Python version list (Martin Pitt)
+        - Remove "label" property from Gtk.MenuItem if it is not set
+	  (Micah Carrick) (#670575)
+
+3.3.3.1 25-Jun-2012
+        - Do not escape enum and flag names that are Python keywords (Martin Pitt)
+
+3.3.3   25-Jun-2012
+        - Remove obsolete release-tag make target (Martin Pitt)
+	- Do not do any python calls when GObjects are destroyed after the
+	  python interpreter has been finalized (Simon Schampijer) (#678046)
+        - Do not change constructor-only "type" Window property (Martin Pitt)
+          (#678510)
+        - Escape identifiers which are Python keywords (Martin Pitt) (#676746)
+	- Fix code for PEP-8 violations detected by the latest pep8 checker.
+          (Martin Pitt)
+        - Fix crash in GLib.find_program_in_path() (Martin Pitt) (#678119)
+        - Revert "Do not bind gobject_get_data() and gobject_set_data()" (Martin Pitt)
+	  (#641944)
+        - GVariant: Raise proper TypeError on invalid tuple input (David Keijser)
+          (#678317)
+
+3.3.2   05-Jun-2012
+	- foreign: Register cairo.Path and cairo.FontOptions foreign structs
+	  (Bastian Winkler) (#677388)
+        - Check types in GBoxed assignments (Marien Zwart) (#676603)
+	- [API add] Gtk overrides: Add TreeModelRow.get_previous()
+	  (Bastian Winkler) (#677389)
+	- [API add] Add missing GObject.TYPE_VARIANT (Bastian Winkler) (#677387)
+        - Fix boxed type equality (Jasper St. Pierre) (#677249)
+        - Fix TestProperties.testBoxed test (Jose Rostagno) (#676644)
+	- Fix handling of by-reference structs as out parameters
+	  (Carlos Garnacho) (#653151)
+	- tests: Add more vfunc checks for GIMarshallingTestsObject
+	  (Martin Pitt)
+        - Test caller-allocated GValue out parameter (Martin Pitt) (#653151)
+        - GObject.bind_property: Support transform functions (Bastian Winkler)
+          (#676169)
+        - Fix lookup of vfuncs in parent classes (Carlos Garnacho) (#672864)
+        - tests/test_properties.py: Fix whitespace (Martin Pitt)
+        - gi: Support zero-terminated arrays with length arguments
+	  (Jasper St. Pierre) (#677124)
+        - [API add] Add GObject.bind_property method (Simon Feltman) (#675582)
         - pygtkcompat: Correctly set flags (Jose Rostagno) (#675911)
         - Gtk overrides: Implement __delitem__ on TreeModel (Jose Rostagno)
           (#675892)
+        - Gdk Color override should support red/green/blue_float properties
+	  (Simon Feltman) (#675579)
+        - Support marshalling of GVariants for closures (Martin Pitt) (#656554)
+        - _pygi_argument_from_object(): Check for compatible data type
+	  (Martin Pitt)
+        - pygtkcompat: Fix color conversion (Martin Pitt)
+        - test_gi: Check setting properties in constructor (Martin Pitt)
+        - Support getting and setting GStrv properties (Martin Pitt)
+        - Support defining GStrv properties from Python (Martin Pitt)
+        - Add GObject.TYPE_STRV constant (Martin Pitt)
+        - Unref GVariants when destroying the wrapper (Martin Pitt) (#675472)
+        - Fix TestArrayGVariant test cases (Martin Pitt)
+        - pygtkcompat: Add gdk.pixbuf_get_formats compat code (Jose Rostagno)
+          (#675489)
+        - pygtkcompat: Add some more compat functions (Jose Rostagno) (#675489)
+        - Fix tests for Python 3 (Martin Pitt)
+        - Fix building with --disable-cairo (Martin Pitt)
+        - tests: Fix deprecated assertions (Martin Pitt)
+        - Run tests with MALLOC_PERTURB_ (Martin Pitt)
 
-3.2.1  10-May-2012
-        - Reindent files in tests to use 4-space indentation (Sebastian Pölsterl)
-        - Add missing override for TreeModel.iter_previous() (Martin Pitt)
-        - GSettings: allow extra keyword arguments (Giovanni Campagna)
-        - pygtkcompat: Correct Userlist module use (Jose Rostagno)
-        - test_gdbus: Call GetConnectionUnixProcessID() with correct signature (Martin Pitt)
-        - GTK overrides: Add missing keyword arguments (Martin Pitt)
-        - pygi-convert.py: Drop obsolete drag method conversions (Martin Pitt)
-        - Fix len_arg_index for array arguments (Bastian Winkler)
-        - Add missing GObject.TYPE_GTYPE (Martin Pitt)
-        - Fix "distcheck" and tests with out-of-tree builds (Martin Pitt)
-        - Add GtkComboBoxEntry compatibility (Paolo Borelli)
-
-3.2.0   26-Mar-2012
-        - No changes since 3.1.93 except version number.
-
-3.1.93  22-Mar-2012
-        - Fix warnings on None values in added tree/list store rows.
-          (#672463, Martin Pitt)
-        - Support marshalling GI_TYPE_TAG_INTERFACE (#668903, Alberto Mardegan)
-        - test_overrides: Find local gsettings schema with current glib
-          (Martin Pitt)
-        - pygtkcompat test: Properly clean up PixbufLoader (Martin Pitt)
+3.3.1   30-Apr-2012
+	- GSettings: allow extra keyword arguments (Giovanni Campagna)
+	  (#675105)
+	- pygtkcompat: Correct Userlist module use (Jose Rostagno) (#675084)
+	- Add release-news make rule (Martin Pitt)
+	- Add "make check.nemiver" target (Martin Pitt)
+	- Test flags and enums in GHash values (Martin Pitt) (#637466)
+	- tests: Activate test_hash_in and apply workaround (Martin Pitt)
+	  (#666636)
+	- Add special case for Gdk.Atom array entries from Python (Martin Pitt)
+	  (#661709)
+	- test_gdbus: Call GetConnectionUnixProcessID() with correct signature
+	  (Martin Pitt) (#667954)
+	- Add test case for Gtk.ListStore custom sort (Martin Pitt) (#674475)
+	- GTK overrides: Add missing keyword arguments (Martin Pitt) (#660018)
+	- [API change] Add missing override for TreeModel.iter_previous()
+	  (Martin Pitt) (#660018)
+	- pygi-convert.py: Drop obsolete drag method conversions (Martin Pitt)
+	  (#652860)
+	- tests: Replace deprecated assertEquals() with assertEqual()
+	  (Martin Pitt)
+	- Plug tiny leak in constant_info_get_value (Paolo Borelli) (#642754)
+	- Fix len_arg_index for array arguments (Bastian Winkler) (#674271)
+	- Support defining GType properties from Python (Martin Pitt) (#674351)
+	- Handle GType properties correctly (Bastian Winkler) (#674351)
+	- Add missing GObject.TYPE_GTYPE (Martin Pitt)
+	- Fix test_mainloop.py for Python 3 (Martin Pitt)
+	- Make callback exception propagation test stricter (Martin Pitt)
+	  (#616279)
+	- [API add] Add context management to freeze_notify() and
+	  handler_block(). (Simon Feltman) (#672324)
+	- Add support for GFlags properties (Martin Pitt) (#620943)
+	- [API add] Wrap GLib.Source.is_destroyed() method (Martin Pitt)
+	  (#524719)
+	- Fix error message when trying to override a non-GI class
+	  (Martin Pitt) (#646667)
+	- Fix segfault when accessing __grefcount__ before creating the GObject
+	  (Steve Frécinaux) (#640434)
+	- [API change] Do not bind gobject_get_data() and gobject_set_data()
+	  (Steve Frécinaux) (#641944)
+	- Add test case for multiple GLib.MainLoop instances (Martin Pitt)
+	  (#663068)
+	- Add a ccallback type which is used to invoke callbacks passed to a
+	  vfunc (John (J5) Palmieri) (#644926)
+	- Regression test: marshalling GValues in GHashTable (Alberto Mardegan)
+	  (#668903)
+	- Update .gitignore (Martin Pitt)
+	- Fix "distcheck" and tests with out-of-tree builds (Martin Pitt)
+	- Add a pep8 check to the makefile (Johan Dahlin) (#672627)
+	- PEP8 whitespace fixes (Johan Dahlin) (#672627)
+	- PEP8: Remove trailing ; (Johan Dahlin) (#672627)
+	- tests: Replace deprecated Python API (Martin Pitt)
+	- Fail tests if they use or encounter deprecations (Martin Pitt)
+	- Do not run tests in two phases any more (Martin Pitt)
+	- test_overrides: Find local gsettings schema with current glib
+	  (Martin Pitt)
+	- Add GtkComboBoxEntry compatibility (Paolo Borelli) (#672589)
+	- Correct review comments from Martin (Johan Dahlin) (#672578)
+	- Correct pyflakes warnings/errors (Johan Dahlin) (#672578)
+	- Make tests fail on CRITICAL logs, too, and apply to all tests
+	  (Martin Pitt)
+	- Support marshalling GI_TYPE_TAG_INTERFACE (Alberto Mardegan)
+	  (#668903)
+	- Fix warnings on None values in added tree/list store rows
+	  (Martin Pitt) (#672463)
+	- pygtkcompat test: Properly clean up PixbufLoader (Martin Pitt)
 
 3.1.92  19-Mar-2012
         - Correct Gtk.TreePath.__iter__ to work with Python 3 (Johan Dahlin)

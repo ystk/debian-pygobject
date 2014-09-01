@@ -26,8 +26,8 @@
 #  include <config.h>
 #endif
 
+#include "pygobject-private.h"
 #include "pygi-foreign.h"
-#include "pygi-foreign-gvariant.h"
 
 #include <girepository.h>
 
@@ -41,16 +41,10 @@ typedef struct {
 
 static GPtrArray *foreign_structs = NULL;
 
-void
-init_foreign_structs ()
+static void
+init_foreign_structs (void)
 {
     foreign_structs = g_ptr_array_new ();
-
-    pygi_register_foreign_struct ("GLib",
-                                  "Variant",
-                                  g_variant_to_arg,
-                                  g_variant_from_arg,
-                                  g_variant_release_foreign);
 }
 
 static PyGIForeignStruct *
@@ -129,6 +123,7 @@ pygi_struct_foreign_convert_to_g_argument (PyObject        *value,
 
 PyObject *
 pygi_struct_foreign_convert_from_g_argument (GIInterfaceInfo *interface_info,
+                                             GITransfer       transfer,
                                              GIArgument      *arg)
 {
     GIBaseInfo *base_info = (GIBaseInfo *) interface_info;
@@ -137,7 +132,7 @@ pygi_struct_foreign_convert_from_g_argument (GIInterfaceInfo *interface_info,
     if (foreign_struct == NULL)
         return NULL;
 
-    return foreign_struct->from_func (interface_info, arg);
+    return foreign_struct->from_func (interface_info, transfer, arg);
 }
 
 PyObject *

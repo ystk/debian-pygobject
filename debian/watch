@@ -1,2 +1,2 @@
 version=3
-http://ftp.gnome.org/pub/GNOME/sources/pygobject/([\d\.]+[02468])/pygobject-([\d\.]+)\.tar\.xz
+http://ftp.gnome.org/pub/GNOME/sources/pygobject/(\d+(?:\.\d+)*)/pygobject(?:-|\.|_|_v|)(\d\S*)\.(?:tar\.xz|txz|tar\.bz2|tbz2|tar\.gz|tgz)

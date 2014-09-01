@@ -14,9 +14,7 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301
- * USA
+ * License along with this library; if not, see <http://www.gnu.org/licenses/>.
  */
 
 #ifndef __PYGOBJECT_EXTERN_H__
@@ -26,13 +24,11 @@
 
 G_BEGIN_DECLS
 
-static PyTypeObject *_PyGObject_Type;
 static PyTypeObject *_PyGTypeWrapper_Type;
 
-#define PyGObject_Type (*_PyGObject_Type)
 #define PyGTypeWrapper_Type (*_PyGTypeWrapper_Type)
 
-__attribute__ ( (unused))
+G_GNUC_UNUSED
 static int
 _pygobject_import (void)
 {
@@ -45,7 +41,7 @@ _pygobject_import (void)
         return 1;
     }
 
-    from_list = Py_BuildValue ("(ss)", "GObject", "GTypeWrapper");
+    from_list = Py_BuildValue ("(s)", "GType");
     if (from_list == NULL) {
         return -1;
     }
@@ -56,12 +52,6 @@ _pygobject_import (void)
 
     if (module == NULL) {
         return -1;
-    }
-
-    _PyGObject_Type = (PyTypeObject *) PyObject_GetAttrString (module, "GObject");
-    if (_PyGObject_Type == NULL) {
-        retval = -1;
-        goto out;
     }
 
     _PyGTypeWrapper_Type = (PyTypeObject *) PyObject_GetAttrString (module, "GType");

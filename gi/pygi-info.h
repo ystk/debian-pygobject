@@ -14,9 +14,7 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301
- * USA
+ * License along with this library; if not, see <http://www.gnu.org/licenses/>.
  */
 
 #ifndef __PYGI_INFO_H__
@@ -67,6 +65,8 @@ gsize _pygi_g_type_tag_size (GITypeTag type_tag);
 gsize _pygi_g_type_info_size (GITypeInfo *type_info);
 
 void _pygi_info_register_types (PyObject *m);
+
+gboolean _pygi_is_python_keyword (const gchar *name);
 
 G_END_DECLS
 
