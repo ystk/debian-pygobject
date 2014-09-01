@@ -16,7 +16,7 @@
 
 #include "pygi.h"
 
-#include "pygobject-external.h"
+#include "pygobject-private.h"
 
 #include "pygi-repository.h"
 #include "pygi-info.h"
@@ -26,11 +26,12 @@
 #include "pygi-type.h"
 #include "pygi-foreign.h"
 #include "pygi-closure.h"
-#include "pygi-callbacks.h"
+#include "pygi-ccallback.h"
 #include "pygi-property.h"
 #include "pygi-signal-closure.h"
 #include "pygi-invoke.h"
 #include "pygi-cache.h"
+#include "pygi-source.h"
 
 G_BEGIN_DECLS
 #if PY_VERSION_HEX >= 0x03000000
@@ -50,6 +51,7 @@ G_BEGIN_DECLS
             } \
         } \
         PyErr_Restore(py_error_type, py_error_value, py_error_traceback); \
+        Py_DECREF(py_error_prefix); \
     } \
 } G_STMT_END
 

@@ -14,9 +14,7 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301
- * USA
+ * License along with this library; if not, see <http://www.gnu.org/licenses/>.
  */
 
 #ifndef __PYGI_MARSHAL_CLEANUP_H__
@@ -39,59 +37,6 @@ void pygi_marshal_cleanup_args_return_fail           (PyGIInvokeState   *state,
 void pygi_marshal_cleanup_args_to_py_parameter_fail  (PyGIInvokeState   *state,
                                                       PyGICallableCache *cache,
                                                       gssize failed_to_py_arg_index);
-
-void _pygi_marshal_cleanup_from_py_utf8                      (PyGIInvokeState *state,
-                                                              PyGIArgCache    *arg_cache,
-                                                              gpointer         data,
-                                                              gboolean         was_processed);
-void _pygi_marshal_cleanup_to_py_utf8                        (PyGIInvokeState *state,
-                                                              PyGIArgCache    *arg_cache,
-                                                              gpointer         data,
-                                                              gboolean         was_processed);
-void _pygi_marshal_cleanup_from_py_interface_struct_gvalue   (PyGIInvokeState *state,
-                                                              PyGIArgCache    *arg_cache,
-                                                              gpointer         data,
-                                                              gboolean         was_processed);
-void _pygi_marshal_cleanup_from_py_interface_struct_foreign  (PyGIInvokeState *state,
-                                                              PyGIArgCache    *arg_cache,
-                                                              gpointer         data,
-                                                              gboolean         was_processed);
-void _pygi_marshal_cleanup_to_py_interface_struct_foreign (PyGIInvokeState *state,
-                                                           PyGIArgCache    *arg_cache,
-                                                           gpointer         data,
-                                                           gboolean         was_processed);
-void _pygi_marshal_cleanup_from_py_interface_object       (PyGIInvokeState *state,
-                                                           PyGIArgCache    *arg_cache,
-                                                           gpointer         data,
-                                                           gboolean         was_processed);
-void _pygi_marshal_cleanup_to_py_interface_object         (PyGIInvokeState *state,
-                                                           PyGIArgCache    *arg_cache,
-                                                           gpointer         data,
-                                                           gboolean         was_processed);
-void _pygi_marshal_cleanup_from_py_array                  (PyGIInvokeState *state,
-                                                           PyGIArgCache    *arg_cache,
-                                                           gpointer         data,
-                                                           gboolean         was_processed);
-void _pygi_marshal_cleanup_to_py_array                    (PyGIInvokeState *state,
-                                                           PyGIArgCache    *arg_cache,
-                                                           gpointer         data,
-                                                           gboolean         was_processed);
-void _pygi_marshal_cleanup_from_py_glist                  (PyGIInvokeState *state,
-                                                           PyGIArgCache    *arg_cache,
-                                                           gpointer         data,
-                                                           gboolean         was_processed);
-void _pygi_marshal_cleanup_to_py_glist                    (PyGIInvokeState *state,
-                                                           PyGIArgCache    *arg_cache,
-                                                           gpointer         data,
-                                                           gboolean         was_processed);
-void _pygi_marshal_cleanup_from_py_ghash                  (PyGIInvokeState *state,
-                                                           PyGIArgCache    *arg_cache,
-                                                           gpointer         data,
-                                                           gboolean         was_processed);
-void _pygi_marshal_cleanup_to_py_ghash                    (PyGIInvokeState *state,
-                                                           PyGIArgCache    *arg_cache,
-                                                           gpointer         data,
-                                                           gboolean         was_processed);
 G_END_DECLS
 
 #endif /* __PYGI_MARSHAL_CLEANUP_H__ */

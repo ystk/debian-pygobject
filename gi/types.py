@@ -23,7 +23,10 @@
 from __future__ import absolute_import
 
 import sys
-from . import _gobject
+import warnings
+
+from ._constants import TYPE_INVALID
+from .docstring import generate_doc_string
 
 from ._gi import \
     InterfaceInfo, \
@@ -31,73 +34,26 @@ from ._gi import \
     StructInfo, \
     VFuncInfo, \
     register_interface_info, \
-    hook_up_vfunc_implementation
+    hook_up_vfunc_implementation, \
+    _gobject
 
-if sys.version_info > (3, 0):
+GInterface = _gobject.GInterface
+
+StructInfo  # pyflakes
+
+from . import _propertyhelper as propertyhelper
+from . import _signalhelper as signalhelper
+
+if (3, 0) <= sys.version_info < (3, 3):
+    # callable not available for python 3.0 thru 3.2
     def callable(obj):
         return hasattr(obj, '__call__')
 
-def Function(info):
-
-    def function(*args, **kwargs):
-        return info.invoke(*args, **kwargs)
-    function.__info__ = info
-    function.__name__ = info.get_name()
-    function.__module__ = info.get_namespace()
-
-    return function
-
-
-class NativeVFunc(object):
-
-    def __init__(self, info):
-        self._info = info
-
-    def __get__(self, instance, klass):
-        def native_vfunc(*args, **kwargs):
-            return self._info.invoke(klass.__gtype__, *args, **kwargs)
-        native_vfunc.__info__ = self._info
-        native_vfunc.__name__ = self._info.get_name()
-        native_vfunc.__module__ = self._info.get_namespace()
-
-        return native_vfunc
-
-
-def Constructor(info):
-
-    def constructor(cls, *args, **kwargs):
-        cls_name = info.get_container().get_name()
-        if cls.__name__ != cls_name:
-            raise TypeError('%s constructor cannot be used to create instances of a subclass' % cls_name)
-        return info.invoke(cls, *args, **kwargs)
-
-    constructor.__info__ = info
-    constructor.__name__ = info.get_name()
-    constructor.__module__ = info.get_namespace()
-
-    return constructor
-
 
 class MetaClassHelper(object):
-
-    def _setup_constructors(cls):
-        for method_info in cls.__info__.get_methods():
-            if method_info.is_constructor():
-                name = method_info.get_name()
-                constructor = classmethod(Constructor(method_info))
-                setattr(cls, name, constructor)
-
     def _setup_methods(cls):
         for method_info in cls.__info__.get_methods():
-            name = method_info.get_name()
-            function = Function(method_info)
-            if method_info.is_method():
-                method = function
-            elif method_info.is_constructor():
-                continue
-            else:
-                method = staticmethod(function)
-            setattr(cls, name, method)
+            setattr(cls, method_info.__name__, method_info)
 
     def _setup_fields(cls):
         for field_info in cls.__info__.get_fields():
@@ -117,14 +73,13 @@ class MetaClassHelper(object):
 
             # If a method name starts with "do_" assume it is a vfunc, and search
             # in the base classes for a method with the same name to override.
-            # Recursion is not necessary here because getattr() searches all
-            # super class attributes as well.
+            # Recursion is necessary as overriden methods in most immediate parent
+            # classes may shadow vfuncs from classes higher in the hierarchy.
             vfunc_info = None
-            for base in cls.__bases__:
+            for base in cls.__mro__:
                 method = getattr(base, vfunc_name, None)
-                if method is not None and hasattr(method, '__info__') and \
-                        isinstance(method.__info__, VFuncInfo):
-                    vfunc_info = method.__info__
+                if method is not None and isinstance(method, VFuncInfo):
+                    vfunc_info = method
                     break
 
             # If we did not find a matching method name in the bases, we might
@@ -144,14 +99,15 @@ class MetaClassHelper(object):
                 if ambiguous_base is not None:
                     base_info = vfunc_info.get_container()
                     raise TypeError('Method %s() on class %s.%s is ambiguous '
-                            'with methods in base classes %s.%s and %s.%s' %
-                            (vfunc_name,
-                             cls.__info__.get_namespace(),
-                             cls.__info__.get_name(),
-                             base_info.get_namespace(),
-                             base_info.get_name(),
-                             ambiguous_base.__info__.get_namespace(),
-                             ambiguous_base.__info__.get_name()))
+                                    'with methods in base classes %s.%s and %s.%s' %
+                                    (vfunc_name,
+                                     cls.__info__.get_namespace(),
+                                     cls.__info__.get_name(),
+                                     base_info.get_namespace(),
+                                     base_info.get_name(),
+                                     ambiguous_base.__info__.get_namespace(),
+                                     ambiguous_base.__info__.get_name()
+                                    ))
                 hook_up_vfunc_implementation(vfunc_info, cls.__gtype__,
                                              py_vfunc)
 
@@ -164,10 +120,15 @@ class MetaClassHelper(object):
         if class_info is None or not isinstance(class_info, ObjectInfo):
             return
 
+        # Special case skipping of vfuncs for GObject.Object because they will break
+        # the static bindings which will try to use them.
+        if cls.__module__ == 'gi.repository.GObject' and cls.__name__ == 'Object':
+            return
+
         for vfunc_info in class_info.get_vfuncs():
-            name = 'do_%s' % vfunc_info.get_name()
-            value = NativeVFunc(vfunc_info)
-            setattr(cls, name, value)
+            name = 'do_%s' % vfunc_info.__name__
+            setattr(cls, name, vfunc_info)
+
 
 def find_vfunc_info_in_interface(bases, vfunc_name):
     for base in bases:
@@ -175,20 +136,25 @@ def find_vfunc_info_in_interface(bases, vfunc_name):
         # This can be seen in IntrospectionModule.__getattr__() in module.py.
         # We do not need to search regular classes here, only wrapped interfaces.
         # We also skip GInterface, because it is not wrapped and has no __info__ attr.
-        if base is _gobject.GInterface or\
-                not issubclass(base, _gobject.GInterface) or\
-                not isinstance(base.__info__, InterfaceInfo):
+        # Skip bases without __info__ (static _gobject._gobject.GObject)
+        if base is GInterface or\
+                not issubclass(base, GInterface) or\
+                not hasattr(base, '__info__'):
             continue
 
-        for vfunc in base.__info__.get_vfuncs():
-            if vfunc.get_name() == vfunc_name:
-                return vfunc
+        # Only look at this classes vfuncs if it is an interface.
+        if isinstance(base.__info__, InterfaceInfo):
+            for vfunc in base.__info__.get_vfuncs():
+                if vfunc.get_name() == vfunc_name:
+                    return vfunc
 
+        # Recurse into the parent classes
         vfunc = find_vfunc_info_in_interface(base.__bases__, vfunc_name)
         if vfunc is not None:
             return vfunc
 
     return None
+
 
 def find_vfunc_conflict_in_bases(vfunc, bases):
     for klass in bases:
@@ -206,8 +172,32 @@ def find_vfunc_conflict_in_bases(vfunc, bases):
             return aklass
     return None
 
-class GObjectMeta(_gobject.GObjectMeta, MetaClassHelper):
 
+class _GObjectMetaBase(type):
+    """Metaclass for automatically registering GObject classes."""
+    def __init__(cls, name, bases, dict_):
+        type.__init__(cls, name, bases, dict_)
+        propertyhelper.install_properties(cls)
+        signalhelper.install_signals(cls)
+        cls._type_register(cls.__dict__)
+
+    def _type_register(cls, namespace):
+        ## don't register the class if already registered
+        if '__gtype__' in namespace:
+            return
+
+        # Do not register a new GType for the overrides, as this would sort of
+        # defeat the purpose of overrides...
+        if cls.__module__.startswith('gi.overrides.'):
+            return
+
+        _gobject.type_register(cls, namespace.get('__gtype_name__'))
+
+_gobject._install_metaclass(_GObjectMetaBase)
+
+
+class GObjectMeta(_GObjectMetaBase, MetaClassHelper):
+    """Meta class used for GI GObject based types."""
     def __init__(cls, name, bases, dict_):
         super(GObjectMeta, cls).__init__(name, bases, dict_)
         is_gi_defined = False
@@ -227,33 +217,61 @@ class GObjectMeta(_gobject.GObjectMeta, MetaClassHelper):
 
             if isinstance(cls.__info__, ObjectInfo):
                 cls._setup_fields()
-                cls._setup_constructors()
             elif isinstance(cls.__info__, InterfaceInfo):
                 register_interface_info(cls.__info__.get_g_type())
 
     def mro(cls):
         return mro(cls)
 
+    @property
+    def __doc__(cls):
+        if cls == GObjectMeta:
+            return ''
+        return generate_doc_string(cls.__info__)
+
 
 def mro(C):
-    """Compute the class precedence list (mro) according to C3
+    """Compute the class precedence list (mro) according to C3, with GObject
+    interface considerations.
+
+    We override Python's MRO calculation to account for the fact that
+    GObject classes are not affected by the diamond problem:
+    http://en.wikipedia.org/wiki/Diamond_problem
 
     Based on http://www.python.org/download/releases/2.3/mro/
-    Modified to consider that interfaces don't create the diamond problem
     """
     # TODO: If this turns out being too slow, consider using generators
     bases = []
     bases_of_subclasses = [[C]]
 
     if C.__bases__:
-        bases_of_subclasses += list(map(mro, C.__bases__)) + [list(C.__bases__)]
+        for base in C.__bases__:
+            # Python causes MRO's to be calculated starting with the lowest
+            # base class and working towards the descendant, storing the result
+            # in __mro__ at each point. Therefore at this point we know that
+            # we already have our base class MRO's available to us, there is
+            # no need for us to (re)calculate them.
+            if hasattr(base, '__mro__'):
+                bases_of_subclasses += [list(base.__mro__)]
+            else:
+                warnings.warn('Mixin class %s is an old style class, please '
+                              'update this to derive from "object".' % base,
+                              RuntimeWarning)
+                # For old-style classes (Python2 only), the MRO is not
+                # easily accessible. As we do need it here, we calculate
+                # it via recursion, according to the C3 algorithm. Using C3
+                # for old style classes deviates from Python's own behaviour,
+                # but visible effects here would be a corner case triggered by
+                # questionable design.
+                bases_of_subclasses += [mro(base)]
+        bases_of_subclasses += [list(C.__bases__)]
 
     while bases_of_subclasses:
         for subclass_bases in bases_of_subclasses:
             candidate = subclass_bases[0]
             not_head = [s for s in bases_of_subclasses if candidate in s[1:]]
-            if not_head and _gobject.GInterface not in candidate.__bases__:
-                candidate = None # conflict, reject candidate
+            if not_head and GInterface not in candidate.__bases__:
+                candidate = None  # conflict, reject candidate
             else:
                 break
 
@@ -263,7 +281,7 @@ def mro(C):
 
         bases.append(candidate)
 
-        for subclass_bases in bases_of_subclasses[:]: # remove candidate
+        for subclass_bases in bases_of_subclasses[:]:  # remove candidate
             if subclass_bases and subclass_bases[0] == candidate:
                 del subclass_bases[0]
                 if not subclass_bases:
@@ -273,22 +291,28 @@ def mro(C):
 
 
 class StructMeta(type, MetaClassHelper):
+    """Meta class used for GI Struct based types."""
 
     def __init__(cls, name, bases, dict_):
         super(StructMeta, cls).__init__(name, bases, dict_)
 
         # Avoid touching anything else than the base class.
         g_type = cls.__info__.get_g_type()
-        if g_type != _gobject.TYPE_INVALID and g_type.pytype is not None:
+        if g_type != TYPE_INVALID and g_type.pytype is not None:
             return
 
         cls._setup_fields()
         cls._setup_methods()
-        cls._setup_constructors()
 
         for method_info in cls.__info__.get_methods():
             if method_info.is_constructor() and \
-                    method_info.get_name() == 'new' and \
+                    method_info.__name__ == 'new' and \
                     not method_info.get_arguments():
-                cls.__new__ = staticmethod(Constructor(method_info))
+                cls.__new__ = staticmethod(method_info)
                 break
+
+    @property
+    def __doc__(cls):
+        if cls == StructMeta:
+            return ''
+        return generate_doc_string(cls.__info__)

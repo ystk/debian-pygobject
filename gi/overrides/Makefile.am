@@ -4,6 +4,7 @@ pygioverrides_PYTHON = \
 	GLib.py \
 	Gtk.py \
 	Gdk.py \
+	GObject.py \
 	Gio.py \
 	GIMarshallingTests.py \
 	Pango.py \
@@ -20,5 +21,3 @@ build_pylinks:
 
 all-local: build_pylinks
 check-local: build_pylinks
-
--include $(top_srcdir)/git.mk

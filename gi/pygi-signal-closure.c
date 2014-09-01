@@ -13,30 +13,11 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301
- * USA
+ * License along with this library; if not, see <http://www.gnu.org/licenses/>.
  */
 
 #include "pygi-private.h"
-
-/* Copied from glib */
-static void
-canonicalize_key (gchar *key)
-{
-    gchar *p;
-
-    for (p = key; *p != 0; p++)
-    {
-        gchar c = *p;
-
-        if (c != '-' &&
-            (c < '0' || c > '9') &&
-            (c < 'A' || c > 'Z') &&
-            (c < 'a' || c > 'z'))
-                *p = '-';
-    }
-}
+#include "pygi-value.h"
 
 static GISignalInfo *
 _pygi_lookup_signal_from_g_type (GType g_type,
@@ -44,36 +25,22 @@ _pygi_lookup_signal_from_g_type (GType g_type,
 {
     GIRepository *repository;
     GIBaseInfo *info;
-    gssize n_infos;
-    gssize i;
-    GType parent;
+    GISignalInfo *signal_info = NULL;
 
     repository = g_irepository_get_default();
     info = g_irepository_find_by_gtype (repository, g_type);
-    if (info != NULL) {
-        n_infos = g_object_info_get_n_signals ( (GIObjectInfo *) info);
-        for (i = 0; i < n_infos; i++) {
-            GISignalInfo *signal_info;
+    if (info == NULL)
+        return NULL;
 
-            signal_info = g_object_info_get_signal ( (GIObjectInfo *) info, i);
-            g_assert (info != NULL);
+    if (GI_IS_OBJECT_INFO (info))
+        signal_info = g_object_info_find_signal ((GIObjectInfo *) info,
+                                                 signal_name);
+    else if (GI_IS_INTERFACE_INFO (info))
+        signal_info = g_interface_info_find_signal ((GIInterfaceInfo *) info,
+                                                    signal_name);
 
-            if (strcmp (signal_name, g_base_info_get_name (signal_info)) == 0) {
-                g_base_info_unref (info);
-                return signal_info;
-            }
-
-            g_base_info_unref (signal_info);
-        }
-
-        g_base_info_unref (info);
-    }
-
-    parent = g_type_parent (g_type);
-    if (parent > 0)
-        return _pygi_lookup_signal_from_g_type (parent, signal_name);
-
-    return NULL;
+    g_base_info_unref (info);
+    return signal_info;
 }
 
 static void
@@ -145,13 +112,26 @@ pygi_signal_closure_marshal(GClosure *closure,
             GITransfer transfer;
             GIArgument arg = { 0, };
             PyObject *item = NULL;
+            gboolean free_array = FALSE;
 
             g_callable_info_load_arg(signal_info, i - 1, &arg_info);
             g_arg_info_load_type(&arg_info, &type_info);
             transfer = g_arg_info_get_ownership_transfer(&arg_info);
 
             arg = _pygi_argument_from_g_value(&param_values[i], &type_info);
-            item = _pygi_argument_to_object(&arg, &type_info, transfer);
+            
+            if (g_type_info_get_tag (&type_info) == GI_TYPE_TAG_ARRAY) {
+                /* Skip the self argument of param_values */
+                arg.v_pointer = _pygi_argument_to_array (&arg, NULL, param_values + 1, signal_info,
+                                                         &type_info, &free_array);
+            }
+            
+            item = _pygi_argument_to_object (&arg, &type_info, transfer);
+            
+            if (free_array) {
+                g_array_free (arg.v_pointer, FALSE);
+            }
+            
 
             if (item == NULL) {
                 goto out;
@@ -174,7 +154,7 @@ pygi_signal_closure_marshal(GClosure *closure,
         goto out;
     }
 
-    if (return_value && pyg_value_from_pyobject(return_value, ret) != 0) {
+    if (G_IS_VALUE(return_value) && pyg_value_from_pyobject(return_value, ret) != 0) {
         PyErr_SetString(PyExc_TypeError,
                         "can't convert return value to desired type");
 
@@ -192,26 +172,21 @@ pygi_signal_closure_marshal(GClosure *closure,
 
 GClosure *
 pygi_signal_closure_new_real (PyGObject *instance,
-                              const gchar *sig_name,
+                              GType g_type,
+                              const gchar *signal_name,
                               PyObject *callback,
                               PyObject *extra_args,
                               PyObject *swap_data)
 {
     GClosure *closure = NULL;
     PyGISignalClosure *pygi_closure = NULL;
-    GType g_type;
     GISignalInfo *signal_info = NULL;
-    char *signal_name = g_strdup (sig_name);
 
     g_return_val_if_fail(callback != NULL, NULL);
 
-    canonicalize_key(signal_name);
-
-    g_type = pyg_type_from_object ((PyObject *)instance);
     signal_info = _pygi_lookup_signal_from_g_type (g_type, signal_name);
-
     if (signal_info == NULL)
-        goto out;
+        return NULL;
 
     closure = g_closure_new_simple(sizeof(PyGISignalClosure), NULL);
     g_closure_add_invalidate_notifier(closure, NULL, pygi_signal_closure_invalidate);
@@ -237,9 +212,6 @@ pygi_signal_closure_new_real (PyGObject *instance,
         pygi_closure->pyg_closure.swap_data = swap_data;
         closure->derivative_flag = TRUE;
     }
-
-out:
-    g_free (signal_name);
 
     return closure;
 }
