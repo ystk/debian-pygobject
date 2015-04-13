@@ -82,7 +82,7 @@ err:
             PyGIMarshalCleanupFunc cleanup = sequence_cache->item_cache->from_py_cleanup;
         }
         */
-        Py_DECREF (py_item);
+        Py_XDECREF (py_item);
         g_list_free (list_);
         _PyGI_ERROR_PREFIX ("Item %i: ", i);
         return FALSE;
@@ -160,7 +160,7 @@ err:
         }
         */
 
-        Py_DECREF (py_item);
+        Py_XDECREF (py_item);
         g_slist_free (list_);
         _PyGI_ERROR_PREFIX ("Item %i: ", i);
         return FALSE;
@@ -402,15 +402,21 @@ _arg_cache_to_py_gslist_setup (PyGIArgCache *arg_cache,
  */
 
 static gboolean
-pygi_arg_glist_setup_from_info (PyGIArgCache  *arg_cache,
-                                GITypeInfo    *type_info,
-                                GIArgInfo     *arg_info,
-                                GITransfer     transfer,
-                                PyGIDirection  direction)
+pygi_arg_glist_setup_from_info (PyGIArgCache      *arg_cache,
+                                GITypeInfo        *type_info,
+                                GIArgInfo         *arg_info,
+                                GITransfer         transfer,
+                                PyGIDirection      direction,
+                                PyGICallableCache *callable_cache)
 {
     GITypeTag type_tag = g_type_info_get_tag (type_info);
 
-    if (!pygi_arg_sequence_setup ((PyGISequenceCache *)arg_cache, type_info, arg_info, transfer, direction))
+    if (!pygi_arg_sequence_setup ((PyGISequenceCache *)arg_cache,
+                                  type_info,
+                                  arg_info,
+                                  transfer,
+                                  direction,
+                                  callable_cache))
         return FALSE;
 
     switch (type_tag) {
@@ -441,10 +447,11 @@ pygi_arg_glist_setup_from_info (PyGIArgCache  *arg_cache,
 }
 
 PyGIArgCache *
-pygi_arg_glist_new_from_info (GITypeInfo   *type_info,
-                              GIArgInfo    *arg_info,
-                              GITransfer    transfer,
-                              PyGIDirection direction)
+pygi_arg_glist_new_from_info (GITypeInfo        *type_info,
+                              GIArgInfo         *arg_info,
+                              GITransfer         transfer,
+                              PyGIDirection      direction,
+                              PyGICallableCache *callable_cache)
 {
     gboolean res = FALSE;
 
@@ -456,7 +463,8 @@ pygi_arg_glist_new_from_info (GITypeInfo   *type_info,
                                           type_info,
                                           arg_info,
                                           transfer,
-                                          direction);
+                                          direction,
+                                          callable_cache);
     if (res) {
         return arg_cache;
     } else {

@@ -10,12 +10,12 @@ import sys
 
 try:
     import cairo
+    cairo  # Pyflakes
     has_cairo = True
     from gi.repository import Regress as Everything
 except ImportError:
     has_cairo = False
 
-#import gi
 from gi.repository import GObject
 from gi.repository import GLib
 from gi.repository import Gio
@@ -33,6 +33,12 @@ else:
     UNICHAR = "♥"
 
 
+const_str = b'const \xe2\x99\xa5 utf8'
+if sys.version_info >= (3, 0):
+    const_str = const_str.decode('UTF-8')
+noconst_str = 'non' + const_str
+
+
 class RawGList(ctypes.Structure):
     _fields_ = [('data', ctypes.c_void_p),
                 ('next', ctypes.c_void_p),
@@ -46,39 +52,6 @@ class RawGList(ctypes.Structure):
 
 @unittest.skipUnless(has_cairo, 'built without cairo support')
 class TestEverything(unittest.TestCase):
-
-    def test_cairo_context(self):
-        context = Everything.test_cairo_context_full_return()
-        self.assertTrue(isinstance(context, cairo.Context))
-
-        surface = cairo.ImageSurface(cairo.FORMAT_ARGB32, 10, 10)
-        context = cairo.Context(surface)
-        Everything.test_cairo_context_none_in(context)
-
-    def test_cairo_surface(self):
-        surface = Everything.test_cairo_surface_none_return()
-        self.assertTrue(isinstance(surface, cairo.ImageSurface))
-        self.assertTrue(isinstance(surface, cairo.Surface))
-        self.assertEqual(surface.get_format(), cairo.FORMAT_ARGB32)
-        self.assertEqual(surface.get_width(), 10)
-        self.assertEqual(surface.get_height(), 10)
-
-        surface = Everything.test_cairo_surface_full_return()
-        self.assertTrue(isinstance(surface, cairo.ImageSurface))
-        self.assertTrue(isinstance(surface, cairo.Surface))
-        self.assertEqual(surface.get_format(), cairo.FORMAT_ARGB32)
-        self.assertEqual(surface.get_width(), 10)
-        self.assertEqual(surface.get_height(), 10)
-
-        surface = cairo.ImageSurface(cairo.FORMAT_ARGB32, 10, 10)
-        Everything.test_cairo_surface_none_in(surface)
-
-        surface = Everything.test_cairo_surface_full_out()
-        self.assertTrue(isinstance(surface, cairo.ImageSurface))
-        self.assertTrue(isinstance(surface, cairo.Surface))
-        self.assertEqual(surface.get_format(), cairo.FORMAT_ARGB32)
-        self.assertEqual(surface.get_width(), 10)
-        self.assertEqual(surface.get_height(), 10)
 
     def test_bool(self):
         self.assertEqual(Everything.test_boolean(False), False)
@@ -254,27 +227,34 @@ class TestEverything(unittest.TestCase):
         timeout = v.lookup_value('timeout', None)
         self.assertEqual(timeout.get_int32(), 10)
 
-    def test_string(self):
-        const_str = b'const \xe2\x99\xa5 utf8'
-        if sys.version_info >= (3, 0):
-            const_str = const_str.decode('UTF-8')
-        noconst_str = 'non' + const_str
-
+    def test_utf8_const_return(self):
         self.assertEqual(Everything.test_utf8_const_return(), const_str)
+
+    def test_utf8_nonconst_return(self):
         self.assertEqual(Everything.test_utf8_nonconst_return(), noconst_str)
+
+    def test_utf8_out(self):
         self.assertEqual(Everything.test_utf8_out(), noconst_str)
 
+    def test_utf8_const_in(self):
         Everything.test_utf8_const_in(const_str)
+
+    def test_utf8_inout(self):
         self.assertEqual(Everything.test_utf8_inout(const_str), noconst_str)
 
+    def test_filename_return(self):
         self.assertEqual(Everything.test_filename_return(), ['åäö', '/etc/fstab'])
 
+    def test_int_out_utf8(self):
         # returns g_utf8_strlen() in out argument
         self.assertEqual(Everything.test_int_out_utf8(''), 0)
         self.assertEqual(Everything.test_int_out_utf8('hello world'), 11)
         self.assertEqual(Everything.test_int_out_utf8('åäö'), 3)
 
+    def test_utf8_out_out(self):
         self.assertEqual(Everything.test_utf8_out_out(), ('first', 'second'))
+
+    def test_utf8_out_nonconst_return(self):
         self.assertEqual(Everything.test_utf8_out_nonconst_return(), ('first', 'second'))
 
     def test_enum(self):
@@ -389,53 +369,88 @@ class TestEverything(unittest.TestCase):
         # test that there are no duplicates returned
         self.assertEqual(len(attr_list), len(set(attr_list)))
 
-    def test_array(self):
+    def test_array_int_in_empty(self):
         self.assertEqual(Everything.test_array_int_in([]), 0)
+
+    def test_array_int_in(self):
         self.assertEqual(Everything.test_array_int_in([1, 5, -2]), 4)
+
+    def test_array_int_out(self):
         self.assertEqual(Everything.test_array_int_out(), [0, 1, 2, 3, 4])
+
+    def test_array_int_full_out(self):
         self.assertEqual(Everything.test_array_int_full_out(), [0, 1, 2, 3, 4])
+
+    def test_array_int_none_out(self):
         self.assertEqual(Everything.test_array_int_none_out(), [1, 2, 3, 4, 5])
+
+    def test_array_int_inout(self):
         self.assertEqual(Everything.test_array_int_inout([1, 5, 42, -8]), [6, 43, -7])
 
+    def test_array_int_inout_empty(self):
+        self.assertEqual(Everything.test_array_int_inout([]), [])
+
+    def test_array_gint8_in(self):
         if sys.version_info >= (3, 0):
             self.assertEqual(Everything.test_array_gint8_in(b'\x01\x03\x05'), 9)
         self.assertEqual(Everything.test_array_gint8_in([1, 3, 5, -50]), -41)
+
+    def test_array_gint16_in(self):
         self.assertEqual(Everything.test_array_gint16_in([256, 257, -1000, 10000]), 9513)
+
+    def test_array_gint32_in(self):
         self.assertEqual(Everything.test_array_gint32_in([30000, 1, -2]), 29999)
+
+    def test_array_gint64_in(self):
         self.assertEqual(Everything.test_array_gint64_in([2 ** 33, 2 ** 34]), 2 ** 33 + 2 ** 34)
 
+    def test_array_gtype_in(self):
         self.assertEqual(Everything.test_array_gtype_in(
             [GObject.TYPE_STRING, GObject.TYPE_UINT64, GObject.TYPE_VARIANT]),
             '[gchararray,guint64,GVariant,]')
 
-    def test_array_fixed_size(self):
+    def test_array_fixed_size_int_in(self):
         # fixed length of 5
         self.assertEqual(Everything.test_array_fixed_size_int_in([1, 2, -10, 5, 3]), 1)
+
+    def test_array_fixed_size_int_in_error(self):
         self.assertRaises(ValueError, Everything.test_array_fixed_size_int_in, [1, 2, 3, 4])
         self.assertRaises(ValueError, Everything.test_array_fixed_size_int_in, [1, 2, 3, 4, 5, 6])
 
+    def test_array_fixed_size_int_out(self):
         self.assertEqual(Everything.test_array_fixed_size_int_out(), [0, 1, 2, 3, 4])
+
+    def test_array_fixed_size_int_return(self):
         self.assertEqual(Everything.test_array_fixed_size_int_return(), [0, 1, 2, 3, 4])
 
-    def test_ptrarray(self):
-        # transfer container
+    def test_garray_container_return(self):
+        # GPtrArray transfer container
         result = Everything.test_garray_container_return()
         self.assertEqual(result, ['regress'])
         result = None
 
-        # transfer full
+    def test_garray_full_return(self):
+        # GPtrArray transfer full
         result = Everything.test_garray_full_return()
         self.assertEqual(result, ['regress'])
         result = None
 
-    def test_strv(self):
+    def test_strv_out(self):
         self.assertEqual(Everything.test_strv_out(), ['thanks', 'for', 'all', 'the', 'fish'])
+
+    def test_strv_out_c(self):
         self.assertEqual(Everything.test_strv_out_c(), ['thanks', 'for', 'all', 'the', 'fish'])
+
+    def test_strv_out_container(self):
         self.assertEqual(Everything.test_strv_out_container(), ['1', '2', '3'])
+
+    def test_strv_outarg(self):
         self.assertEqual(Everything.test_strv_outarg(), ['1', '2', '3'])
 
+    def test_strv_in_gvalue(self):
         self.assertEqual(Everything.test_strv_in_gvalue(), ['one', 'two', 'three'])
 
+    def test_strv_in(self):
         Everything.test_strv_in(['1', '2', '3'])
 
     def test_glist(self):
@@ -700,6 +715,25 @@ class TestCallbacks(unittest.TestCase):
         self.assertEqual(result, 3)
         self.assertEqual(TestCallbacks.callargs,
                          [([-1, 0, 1, 2], ['one', 'two', 'three'])] * 2)
+        self.assertEqual(sys.getrefcount(callback), refcount)
+
+    @unittest.skipUnless(hasattr(Everything, 'test_array_inout_callback'),
+                         'Requires newer version of GI')
+    def test_callback_scope_call_array_inout(self):
+        # This tests a callback that gets called multiple times from a
+        # single scope call in python with inout array arguments
+        TestCallbacks.callargs = []
+
+        def callback(ints, ints_length):
+            TestCallbacks.callargs.append(ints)
+            return ints[1:], len(ints[1:])
+
+        refcount = sys.getrefcount(callback)
+        result = Everything.test_array_inout_callback(callback)
+        self.assertEqual(TestCallbacks.callargs,
+                         [[-2, -1, 0, 1, 2], [-1, 0, 1, 2]])
+        # first callback should give 4, second 3
+        self.assertEqual(result, 3)
         self.assertEqual(sys.getrefcount(callback), refcount)
 
     def test_callback_userdata(self):
@@ -1030,51 +1064,7 @@ class TestClosures(unittest.TestCase):
 
 
 @unittest.skipUnless(has_cairo, 'built without cairo support')
-class TestProperties(unittest.TestCase):
-
-    def test_basic(self):
-        object_ = Everything.TestObj()
-
-        self.assertEqual(object_.props.int, 0)
-        object_.props.int = 42
-        self.assertTrue(isinstance(object_.props.int, int))
-        self.assertEqual(object_.props.int, 42)
-
-        self.assertEqual(object_.props.float, 0.0)
-        object_.props.float = 42.42
-        self.assertTrue(isinstance(object_.props.float, float))
-        self.assertAlmostEqual(object_.props.float, 42.42, places=5)
-
-        self.assertEqual(object_.props.double, 0.0)
-        object_.props.double = 42.42
-        self.assertTrue(isinstance(object_.props.double, float))
-        self.assertAlmostEqual(object_.props.double, 42.42, places=5)
-
-        self.assertEqual(object_.props.string, None)
-        object_.props.string = 'mec'
-        self.assertTrue(isinstance(object_.props.string, str))
-        self.assertEqual(object_.props.string, 'mec')
-
-        self.assertEqual(object_.props.gtype, GObject.TYPE_INVALID)
-        object_.props.gtype = int
-        self.assertEqual(object_.props.gtype, GObject.TYPE_INT)
-
-    def test_hash_table(self):
-        object_ = Everything.TestObj()
-        self.assertEqual(object_.props.hash_table, None)
-
-        object_.props.hash_table = {'mec': 56}
-        self.assertTrue(isinstance(object_.props.hash_table, dict))
-        self.assertEqual(list(object_.props.hash_table.items())[0], ('mec', 56))
-
-    def test_list(self):
-        object_ = Everything.TestObj()
-        self.assertEqual(object_.props.list, [])
-
-        object_.props.list = ['1', '2', '3']
-        self.assertTrue(isinstance(object_.props.list, list))
-        self.assertEqual(object_.props.list, ['1', '2', '3'])
-
+class TestBoxed(unittest.TestCase):
     def test_boxed(self):
         object_ = Everything.TestObj()
         self.assertEqual(object_.props.boxed, None)
@@ -1113,29 +1103,6 @@ class TestProperties(unittest.TestCase):
         copy = boxed.copy()
         self.assertEqual(boxed, copy)
         self.assertNotEqual(id(boxed), id(copy))
-
-    def test_gtype(self):
-        object_ = Everything.TestObj()
-        self.assertEqual(object_.props.gtype, GObject.TYPE_INVALID)
-        object_.props.gtype = int
-        self.assertEqual(object_.props.gtype, GObject.TYPE_INT)
-
-        object_ = Everything.TestObj(gtype=int)
-        self.assertEqual(object_.props.gtype, GObject.TYPE_INT)
-        object_.props.gtype = str
-        self.assertEqual(object_.props.gtype, GObject.TYPE_STRING)
-
-    def test_parent_class(self):
-        class A(Everything.TestObj):
-            prop1 = GObject.Property(type=int)
-
-        a = A()
-        a.props.int = 20
-        self.assertEqual(a.props.int, 20)
-
-        # test parent property which needs introspection
-        a.props.list = ("str1", "str2")
-        self.assertEqual(a.props.list, ["str1", "str2"])
 
 
 @unittest.skipUnless(has_cairo, 'built without cairo support')
@@ -1224,135 +1191,3 @@ class TestAdvancedInterfaces(unittest.TestCase):
 
         ret = obj.skip_return_val_no_out(1)
         self.assertEqual(ret, None)
-
-
-@unittest.skipUnless(has_cairo, 'built without cairo support')
-class TestSignals(unittest.TestCase):
-    def test_object_param_signal(self):
-        obj = Everything.TestObj()
-
-        def callback(obj, obj_param):
-            self.assertEqual(obj_param.props.int, 3)
-            self.assertGreater(obj_param.__grefcount__, 1)
-            obj.called = True
-
-        obj.called = False
-        obj.connect('sig-with-obj', callback)
-        obj.emit_sig_with_obj()
-        self.assertTrue(obj.called)
-
-    def test_connect_after(self):
-        obj = Everything.TestObj()
-
-        def callback(obj, obj_param):
-            obj.called = True
-
-        obj.called = False
-        obj.connect_after('sig-with-obj', callback)
-        obj.emit_sig_with_obj()
-        self.assertTrue(obj.called)
-
-    def test_connect_object(self):
-        obj = Everything.TestObj()
-
-        def callback(obj, obj_param):
-            obj.called = True
-
-        obj.called = False
-        obj.connect_object('sig-with-obj', callback, obj)
-        obj.emit_sig_with_obj()
-        self.assertTrue(obj.called)
-
-    def test_connect_object_after(self):
-        obj = Everything.TestObj()
-
-        def callback(obj, obj_param):
-            obj.called = True
-
-        obj.called = False
-        obj.connect_object_after('sig-with-obj', callback, obj)
-        obj.emit_sig_with_obj()
-        self.assertTrue(obj.called)
-
-    def test_int64_param_from_py(self):
-        obj = Everything.TestObj()
-
-        def callback(obj, i):
-            obj.callback_i = i
-            return i
-
-        obj.callback_i = None
-        obj.connect('sig-with-int64-prop', callback)
-        rv = obj.emit('sig-with-int64-prop', GObject.G_MAXINT64)
-        self.assertEqual(rv, GObject.G_MAXINT64)
-        self.assertEqual(obj.callback_i, GObject.G_MAXINT64)
-
-    def test_uint64_param_from_py(self):
-        obj = Everything.TestObj()
-
-        def callback(obj, i):
-            obj.callback_i = i
-            return i
-
-        obj.callback_i = None
-        obj.connect('sig-with-uint64-prop', callback)
-        rv = obj.emit('sig-with-uint64-prop', GObject.G_MAXUINT64)
-        self.assertEqual(rv, GObject.G_MAXUINT64)
-        self.assertEqual(obj.callback_i, GObject.G_MAXUINT64)
-
-    def test_int64_param_from_c(self):
-        obj = Everything.TestObj()
-
-        def callback(obj, i):
-            obj.callback_i = i
-            return i
-
-        obj.callback_i = None
-
-        obj.connect('sig-with-int64-prop', callback)
-        obj.emit_sig_with_int64()
-        self.assertEqual(obj.callback_i, GObject.G_MAXINT64)
-
-    def test_uint64_param_from_c(self):
-        obj = Everything.TestObj()
-
-        def callback(obj, i):
-            obj.callback_i = i
-            return i
-
-        obj.callback_i = None
-
-        obj.connect('sig-with-uint64-prop', callback)
-        obj.emit_sig_with_uint64()
-        self.assertEqual(obj.callback_i, GObject.G_MAXUINT64)
-
-    def test_intarray_ret(self):
-        obj = Everything.TestObj()
-
-        def callback(obj, i):
-            obj.callback_i = i
-            return [i, i + 1]
-
-        obj.callback_i = None
-
-        try:
-            obj.connect('sig-with-intarray-ret', callback)
-        except TypeError as e:
-            # compat with g-i 1.34.x
-            if 'unknown signal' in str(e):
-                return
-            raise
-
-        rv = obj.emit('sig-with-intarray-ret', 42)
-        self.assertEqual(obj.callback_i, 42)
-        self.assertEqual(type(rv), GLib.Array)
-        self.assertEqual(rv.len, 2)
-
-
-@unittest.skipUnless(has_cairo, 'built without cairo support')
-@unittest.skipUnless(Gtk, 'Gtk not available')
-class TestPango(unittest.TestCase):
-    def test_cairo_font_options(self):
-        screen = Gtk.Window().get_screen()
-        font_opts = screen.get_font_options()
-        self.assertEqual(type(font_opts.get_subpixel_order()), int)

@@ -86,8 +86,10 @@ DIST_COMMON = $(srcdir)/Makefile.in $(srcdir)/Makefile.am \
 	$(top_srcdir)/depcomp
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/as-ac-expand.m4 \
-	$(top_srcdir)/m4/jhflags.m4 $(top_srcdir)/m4/python.m4 \
-	$(top_srcdir)/configure.ac
+	$(top_srcdir)/m4/jhflags.m4 $(top_srcdir)/m4/libtool.m4 \
+	$(top_srcdir)/m4/ltoptions.m4 $(top_srcdir)/m4/ltsugar.m4 \
+	$(top_srcdir)/m4/ltversion.m4 $(top_srcdir)/m4/lt~obsolete.m4 \
+	$(top_srcdir)/m4/python.m4 $(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
 mkinstalldirs = $(install_sh) -d
@@ -258,6 +260,7 @@ NM = @NM@
 NMEDIT = @NMEDIT@
 OBJDUMP = @OBJDUMP@
 OBJEXT = @OBJEXT@
+OS_EXT = @OS_EXT@
 OTOOL = @OTOOL@
 OTOOL64 = @OTOOL64@
 PACKAGE = @PACKAGE@
@@ -359,12 +362,12 @@ check_LTLIBRARIES = libgimarshallingtests.la $(am__append_1) \
 test_typelibs = GIMarshallingTests-1.0.typelib $(am__append_2)
 nodist_libgimarshallingtests_la_SOURCES = $(GI_DATADIR)/tests/gimarshallingtests.c $(GI_DATADIR)/tests/gimarshallingtests.h
 libgimarshallingtests_la_CFLAGS = $(GLIB_CFLAGS)
-libgimarshallingtests_la_LDFLAGS = -module -avoid-version $(GLIB_LIBS)
+libgimarshallingtests_la_LDFLAGS = -module -avoid-version $(GLIB_LIBS) -no-undefined
 @ENABLE_CAIRO_TRUE@nodist_libregress_la_SOURCES = $(GI_DATADIR)/tests/regress.c $(GI_DATADIR)/tests/regress.h
 @ENABLE_CAIRO_TRUE@libregress_la_CFLAGS = $(GIO_CFLAGS) $(CAIRO_CFLAGS)
-@ENABLE_CAIRO_TRUE@libregress_la_LDFLAGS = -module -avoid-version $(GIO_LIBS) $(CAIRO_LIBS)
+@ENABLE_CAIRO_TRUE@libregress_la_LDFLAGS = -module -avoid-version $(GIO_LIBS) $(CAIRO_LIBS) -no-undefined
 testhelper_la_CFLAGS = -I$(top_srcdir)/gi $(PYTHON_INCLUDES) $(GLIB_CFLAGS)
-testhelper_la_LDFLAGS = -module -avoid-version
+testhelper_la_LDFLAGS = -module -avoid-version -no-undefined $(PYTHON_LIBS)
 testhelper_la_LIBADD = $(GLIB_LIBS)
 testhelper_la_SOURCES = \
 	testhelpermodule.c \
@@ -382,6 +385,8 @@ EXTRA_DIST = \
 	test-unknown.h \
 	te_ST@nouppera \
 	org.gnome.test.gschema.xml \
+	test_cairo.py \
+	test_error.py \
 	test_gio.py \
 	test_glib.py \
 	test_gobject.py \
@@ -397,10 +402,11 @@ EXTRA_DIST = \
 	test_source.py \
 	test_subprocess.py \
 	test_thread.py \
+	test_typeclass.py \
 	test_everything.py \
 	test_gi.py \
 	test_gdbus.py \
-	test_overrides.py \
+	test_import_machinery.py \
 	test_overrides_glib.py \
 	test_overrides_pango.py \
 	test_overrides_gdk.py \
@@ -429,7 +435,7 @@ RUN_TESTS_ENV_VARS = \
 all: all-am
 
 .SUFFIXES:
-.SUFFIXES: .c .la .lo .o .obj .so
+.SUFFIXES: .$(OS_EXT) .c .la .lo .o .obj
 $(srcdir)/Makefile.in:  $(srcdir)/Makefile.am  $(am__configure_deps)
 	@for dep in $?; do \
 	  case '$(am__configure_deps)' in \
@@ -801,17 +807,17 @@ gschemas.compiled: org.gnome.test.gschema.xml
 testhelper.la: $(testhelper_la_OBJECTS) $(testhelper_la_DEPENDENCIES)
 	$(AM_V_GEN) $(LINK) -rpath $(pkgpyexecdir) $(testhelper_la_LDFLAGS) $(testhelper_la_OBJECTS) $(testhelper_la_LIBADD) $(LIBS)
 
-.la.so:
+.la.$(OS_EXT):
 	test -L $@ || $(LN_S) .libs/$@ $@
 
-all: $(check_LTLIBRARIES:.la=.so)
+all: $(check_LTLIBRARIES:.la=.$(OS_EXT))
 
 clean-local:
-	rm -f $(check_LTLIBRARIES:.la=.so) file.txt~
+	rm -f $(check_LTLIBRARIES:.la=.$(OS_EXT)) file.txt~
 
 # pygtkcompat tests need to be run in a separate process as they
 # clobber global name space
-check-local: $(check_LTLIBRARIES:.la=.so) $(test_typelibs) gschemas.compiled
+check-local: $(check_LTLIBRARIES:.la=.$(OS_EXT)) $(test_typelibs) gschemas.compiled
 	export `$(DBUS_LAUNCH)` && \
 	$(RUN_TESTS_ENV_VARS) $(EXEC_NAME) $(PYTHON) -Wd $(srcdir)/runtests.py; rc=$$?; \
 	[ "$$rc" -ne 0 ] || [ -n "$$TEST_NAMES" ] || { TEST_NAMES=compat_test_pygtk $(RUN_TESTS_ENV_VARS) $(EXEC_NAME) $(PYTHON) -Wd -Werror::PendingDeprecationWarning -Werror::DeprecationWarning -Werror::RuntimeWarning $(srcdir)/runtests.py; rc=$$?; }; \
@@ -824,16 +830,33 @@ check.gdb:
 check.nemiver:
 	EXEC_NAME="nemiver" $(MAKE) check
 
+# Note G_SLICE in these check variations is intended to clobber the default set in RUN_TESTS_ENV_VARS
 check.valgrind:
-	EXEC_NAME="G_SLICE=always-malloc valgrind --leak-check=full --show-possibly-lost=no --suppressions=$(top_srcdir)/tests/$(PYTHON_BASENAME).supp" G_DEBUG=gc-friendly $(MAKE) check
+	EXEC_NAME="G_SLICE=always-malloc G_DEBUG=gc-friendly \
+	valgrind --leak-check=full --show-possibly-lost=no --num-callers=20 \
+	--suppressions=$(top_srcdir)/tests/$(PYTHON_BASENAME).supp \
+	" \
+	$(MAKE) check
 
 check.valgrindlog:
 	mkdir -p $(top_builddir)/tmp
-	EXEC_NAME="G_SLICE=always-malloc valgrind --log-file=$(top_builddir)/tmp/`git rev-parse HEAD | cut -c1-8`-$$TEST_NAMES.log --leak-check=full --show-possibly-lost=no --suppressions=$(top_srcdir)/tests/$(PYTHON_BASENAME).supp" G_DEBUG=gc-friendly $(MAKE) check
+	EXEC_NAME="G_SLICE=always-malloc G_DEBUG=gc-friendly \
+	valgrind --leak-check=full --show-possibly-lost=no --num-callers=20 \
+	--suppressions=$(top_srcdir)/tests/$(PYTHON_BASENAME).supp \
+	--child-silent-after-fork=yes \
+	--log-file=$(top_builddir)/tmp/`git rev-parse HEAD | cut -c1-8`-$$TEST_NAMES.log \
+	" \
+	$(MAKE) check
 
 check.valgrindxml:
 	mkdir -p $(top_builddir)/tmp
-	EXEC_NAME="G_SLICE=always-malloc valgrind --xml=yes --xml-file=$(top_builddir)/tmp/`git rev-parse HEAD | cut -c1-8`-$$TEST_NAMES.xml --leak-check=full --show-possibly-lost=no --suppressions=$(top_srcdir)/tests/$(PYTHON_BASENAME).supp" G_DEBUG=gc-friendly $(MAKE) check
+	EXEC_NAME="G_SLICE=always-malloc G_DEBUG=gc-friendly \
+	valgrind --leak-check=full --show-possibly-lost=no --num-callers=20 \
+	--suppressions=$(top_srcdir)/tests/$(PYTHON_BASENAME).supp \
+	--child-silent-after-fork=yes \
+	--xml=yes --xml-file=$(top_builddir)/tmp/`git rev-parse HEAD | cut -c1-8`-$$TEST_NAMES.xml \
+	" \
+	$(MAKE) check
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

@@ -12,13 +12,13 @@ Bug-Ubuntu: https://launchpad.net/bugs/1028115
  gi/pygi-foreign-cairo.c |   44 ++++++++++++++++++++++++++++++++++++++++++++
  1 file changed, 44 insertions(+)
 
-Index: pygobject-3.7.5.1/gi/pygi-foreign-cairo.c
+Index: pygobject/gi/pygi-foreign-cairo.c
 ===================================================================
---- pygobject-3.7.5.1.orig/gi/pygi-foreign-cairo.c	2013-02-11 08:57:38.694078604 +0100
-+++ pygobject-3.7.5.1/gi/pygi-foreign-cairo.c	2013-02-11 09:08:43.154048264 +0100
-@@ -185,6 +185,46 @@
-     Py_RETURN_NONE;
+--- pygobject.orig/gi/pygi-foreign-cairo.c
++++ pygobject/gi/pygi-foreign-cairo.c
+@@ -368,6 +368,46 @@ cairo_pattern_from_gvalue (const GValue
  }
+ 
  
 +#if PY_VERSION_HEX >= 0x03000000
 +static PyObject *
@@ -63,11 +63,10 @@ Index: pygobject-3.7.5.1/gi/pygi-foreign-cairo.c
  static PyMethodDef _gi_cairo_functions[] = { {0,} };
  PYGLIB_MODULE_START(_gi_cairo, "_gi_cairo")
  {
-@@ -220,5 +260,13 @@
-                                   cairo_font_options_to_arg,
+@@ -406,6 +446,14 @@ PYGLIB_MODULE_START(_gi_cairo, "_gi_cair
                                    cairo_font_options_from_arg,
                                    cairo_font_options_release);
-+
+ 
 +#if PY_VERSION_HEX >= 0x03000000
 +    pygi_register_foreign_struct ("cairo",
 +                                  "Region",
@@ -75,5 +74,7 @@ Index: pygobject-3.7.5.1/gi/pygi-foreign-cairo.c
 +                                  cairo_region_from_arg,
 +                                  cairo_region_release);
 +#endif
- }
- PYGLIB_MODULE_END;
++
+     pyg_register_gtype_custom (CAIRO_GOBJECT_TYPE_CONTEXT,
+                                cairo_context_from_gvalue,
+                                cairo_context_to_gvalue);

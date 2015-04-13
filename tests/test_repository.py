@@ -100,6 +100,13 @@ class Test(unittest.TestCase):
         self.assertFalse(info.get_fundamental())
         self.assertEqual(info.get_parent(), repo.find_by_name('GObject', 'Object'))
 
+    def test_callable_inheritance(self):
+        self.assertTrue(issubclass(GIRepository.CallableInfo, GIRepository.BaseInfo))
+        self.assertTrue(issubclass(GIRepository.CallbackInfo, GIRepository.CallableInfo))
+        self.assertTrue(issubclass(GIRepository.FunctionInfo, GIRepository.CallableInfo))
+        self.assertTrue(issubclass(GIRepository.VFuncInfo, GIRepository.CallableInfo))
+        self.assertTrue(issubclass(GIRepository.SignalInfo, GIRepository.CallableInfo))
+
     def test_registered_type_info(self):
         info = repo.find_by_name('GIMarshallingTests', 'Object')
         # Call these from the class because GIObjectInfo overrides them
@@ -213,7 +220,6 @@ class Test(unittest.TestCase):
         self.assertEqual(func_info.get_return_type().get_tag(), GIRepository.TypeTag.VOID)
         self.assertRaises(AttributeError, func_info.get_return_attribute, '_not_an_attr')
 
-    @unittest.expectedFailure  # https://bugzilla.gnome.org/show_bug.cgi?id=709462
     @unittest.skipUnless(has_cairo, 'Regress needs cairo')
     def test_signal_info(self):
         repo.require('Regress')
@@ -231,7 +237,6 @@ class Test(unittest.TestCase):
         self.assertFalse(sig_info.true_stops_emit())
         self.assertEqual(sig_info.get_flags(), sig_flags)
 
-    @unittest.expectedFailure  # https://bugzilla.gnome.org/show_bug.cgi?id=709462
     @unittest.skipUnless(has_cairo, 'Regress needs cairo')
     def test_notify_signal_info_with_obj(self):
         repo.require('Regress')
@@ -301,6 +306,22 @@ class Test(unittest.TestCase):
         self.assertEqual(vfunc.get_flags(), 0)
         self.assertEqual(vfunc.get_offset(), 0xFFFF)  # unknown offset
         self.assertEqual(vfunc.get_signal(), None)
+
+    def test_callable_can_throw_gerror(self):
+        info = repo.find_by_name('GIMarshallingTests', 'Object')
+        invoker = find_child_info(info, 'get_methods', 'vfunc_meth_with_error')
+        vfunc = find_child_info(info, 'get_vfuncs', 'vfunc_meth_with_err')
+
+        self.assertTrue(invoker.can_throw_gerror())
+        self.assertTrue(vfunc.can_throw_gerror())
+
+        # Test that args do not include the GError**
+        self.assertEqual(len(invoker.get_arguments()), 1)
+        self.assertEqual(len(vfunc.get_arguments()), 1)
+
+        # Sanity check method that does not throw.
+        invoker_no_throws = find_child_info(info, 'get_methods', 'method_int8_in')
+        self.assertFalse(invoker_no_throws.can_throw_gerror())
 
     def test_flags_double_registration_error(self):
         # a warning is printed for double registration and pygobject will

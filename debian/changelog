@@ -1,3 +1,23 @@
+pygobject (3.14.0-1) unstable; urgency=medium
+
+  * New upstream release.
+  * Drop Add-protection-against-attempts-at-importing-static-.patch, included
+    in this version.
+  * Refresh 01_cairo_region.patch to apply to this version.
+  * Bump g-i dependencies to >= 1.39 as per upstream configure.ac.
+  * Bump Standards-Version to 3.9.6 (no changes necessary).
+
+ -- Martin Pitt <mpitt@debian.org>  Tue, 23 Sep 2014 07:22:57 +0200
+
+pygobject (3.12.2-1) unstable; urgency=medium
+
+  * New upstream release
+  * d/p/Add-protection-against-attempts-at-importing-static-.patch
+    + Added. Prevents segfault when importing old-style modules in programs
+      using gi (From upstream git)
+
+ -- Sjoerd Simons <sjoerd@debian.org>  Sat, 30 Aug 2014 14:23:05 +0200
+
 pygobject (3.12.1-1) unstable; urgency=medium
 
   * New upstream bug fix release.

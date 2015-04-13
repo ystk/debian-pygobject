@@ -17,12 +17,12 @@ m4_define(python3_min_ver, 3.1)
 
 dnl the pygobject version number
 m4_define(pygobject_major_version, 3)
-m4_define(pygobject_minor_version, 12)
-m4_define(pygobject_micro_version, 1)
+m4_define(pygobject_minor_version, 14)
+m4_define(pygobject_micro_version, 0)
 m4_define(pygobject_version, pygobject_major_version.pygobject_minor_version.pygobject_micro_version)
 
 dnl versions of packages we require ...
-m4_define(introspection_required_version, 1.38.0)
+m4_define(introspection_required_version, 1.39.0)
 m4_define(py2cairo_required_version, 1.2.0)
 m4_define(py3cairo_required_version, 1.10.0)
 m4_define(glib_required_version, 2.38.0)
@@ -30,7 +30,7 @@ m4_define(gio_required_version, 2.38.0)
 
 AC_INIT([pygobject],[pygobject_version],
 	[http://bugzilla.gnome.org/enter_bug.cgi?product=pygobject],
-	[pygobject],[https://live.gnome.org/PyGObject/])
+	[pygobject],[https://wiki.gnome.org/Projects/PyGObject/])
 AC_SUBST(ACLOCAL_AMFLAGS, "-I m4 -I .")
 AC_CONFIG_MACRO_DIR([m4])
 AC_CONFIG_SRCDIR([gi/gimodule.c])
@@ -51,29 +51,29 @@ ACLOCAL="$ACLOCAL $ACLOCAL_FLAGS"
 
 AC_CANONICAL_BUILD
 AC_CANONICAL_HOST
-AC_MSG_CHECKING([for some Win32 platform])
+AC_MSG_CHECKING([for build time linking with Python (Darwin and Win32)])
 case "$host" in
   *-*-mingw*|*-*-cygwin*)
-    platform_win32=yes
-    ;;
-  *)
-    platform_win32=no
-    ;;
-esac
-AC_MSG_RESULT([$platform_win32])
-AM_CONDITIONAL(PLATFORM_WIN32, test "$platform_win32" = "yes")
-
-AC_MSG_CHECKING([for native Win32])
-case "$host" in
-  *-*-mingw*)
     os_win32=yes
+    link_python_libs=yes
+    OS_EXT=dll
+    ;;
+  *-*-darwin*)
+    os_win32=no
+    link_python_libs=yes
+    OS_EXT=dylib
     ;;
   *)
     os_win32=no
+    link_python_libs=no
+    OS_EXT=so
     ;;
 esac
-AC_MSG_RESULT([$os_win32])
+AC_MSG_RESULT([$link_python_libs])
 AM_CONDITIONAL(OS_WIN32, test "$os_win32" = "yes")
+
+AC_SUBST(OS_EXT)
+AC_DEFINE_UNQUOTED(OS_EXT, "$OS_EXT", [Define shared library extension])
 
 LT_PREREQ([2.2.6])
 LT_INIT([dlopen win32-dll disable-static])
@@ -118,8 +118,8 @@ PYTHON_SO=`$PYTHON -c "import distutils.sysconfig, sys; get = distutils.sysconfi
 AC_SUBST(PYTHON_SO)
 
 AM_CHECK_PYTHON_HEADERS(, AC_MSG_ERROR([Python headers not found]))
-if test "x$os_win32" = "xyes"; then
-  AM_CHECK_PYTHON_LIBS(, AC_MSG_ERROR([Python libs not found. Windows requires Python modules to be explicitly linked to libpython.]))
+if test "x$link_python_libs" = "xyes"; then
+  AM_CHECK_PYTHON_LIBS(, AC_MSG_ERROR([Python libs not found. Windows and Darwin require Python modules to be explicitly linked to libpython.]))
 fi
 
 AC_MSG_CHECKING([for PySignal_SetWakeupFd in Python.h])

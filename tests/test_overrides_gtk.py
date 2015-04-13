@@ -55,6 +55,15 @@ def realized(widget):
         Gtk.main_iteration()
 
 
+@contextlib.contextmanager
+def ignore_glib_warnings():
+    """Temporarily change GLib logging to not bail on warnings."""
+    old_mask = GLib.log_set_always_fatal(
+        GLib.LogLevelFlags.LEVEL_CRITICAL | GLib.LogLevelFlags.LEVEL_ERROR)
+    yield
+    GLib.log_set_always_fatal(old_mask)
+
+
 @unittest.skipUnless(Gtk, 'Gtk not available')
 class TestGtk(unittest.TestCase):
     def test_container(self):
@@ -307,13 +316,10 @@ class TestGtk(unittest.TestCase):
 
     def test_file_chooser_dialog(self):
         # might cause a GVFS warning, do not break on this
-        old_mask = GLib.log_set_always_fatal(
-            GLib.LogLevelFlags.LEVEL_CRITICAL | GLib.LogLevelFlags.LEVEL_ERROR)
-        try:
+        with ignore_glib_warnings():
             dialog = Gtk.FileChooserDialog(title='file chooser dialog test',
                                            action=Gtk.FileChooserAction.SAVE)
-        finally:
-            GLib.log_set_always_fatal(old_mask)
+
         self.assertTrue(isinstance(dialog, Gtk.Dialog))
         self.assertTrue(isinstance(dialog, Gtk.Window))
         self.assertEqual('file chooser dialog test', dialog.get_title())
@@ -323,12 +329,8 @@ class TestGtk(unittest.TestCase):
 
     def test_file_chooser_dialog_default_action(self):
         # might cause a GVFS warning, do not break on this
-        old_mask = GLib.log_set_always_fatal(
-            GLib.LogLevelFlags.LEVEL_CRITICAL | GLib.LogLevelFlags.LEVEL_ERROR)
-        try:
+        with ignore_glib_warnings():
             dialog = Gtk.FileChooserDialog(title='file chooser dialog test')
-        finally:
-            GLib.log_set_always_fatal(old_mask)
 
         action = dialog.get_property('action')
         self.assertEqual(Gtk.FileChooserAction.OPEN, action)
@@ -368,7 +370,11 @@ class TestGtk(unittest.TestCase):
         self.assertTrue(isinstance(button, Gtk.Button))
         self.assertTrue(isinstance(button, Gtk.Container))
         self.assertTrue(isinstance(button, Gtk.Widget))
-        button = Gtk.Button.new_from_stock(Gtk.STOCK_CLOSE)
+
+        # Using stock items causes hard warning in devel versions of GTK+.
+        with ignore_glib_warnings():
+            button = Gtk.Button.new_from_stock(Gtk.STOCK_CLOSE)
+
         self.assertEqual(Gtk.STOCK_CLOSE, button.get_label())
         self.assertTrue(button.get_use_stock())
         self.assertTrue(button.get_use_underline())
@@ -583,14 +589,16 @@ class TestGtk(unittest.TestCase):
 
     def test_toolbutton(self):
         # PyGTK compat
-        button = Gtk.ToolButton()
-        self.assertEqual(button.props.stock_id, None)
 
-        button = Gtk.ToolButton(stock_id='gtk-new')
-        self.assertEqual(button.props.stock_id, 'gtk-new')
+        # Using stock items causes hard warning in devel versions of GTK+.
+        with ignore_glib_warnings():
+            button = Gtk.ToolButton()
+            self.assertEqual(button.props.stock_id, None)
+
+            button = Gtk.ToolButton(stock_id='gtk-new')
+            self.assertEqual(button.props.stock_id, 'gtk-new')
 
         icon = Gtk.Image.new_from_stock(Gtk.STOCK_OPEN, Gtk.IconSize.SMALL_TOOLBAR)
-
         button = Gtk.ToolButton(label='mylabel', icon_widget=icon)
         self.assertEqual(button.props.label, 'mylabel')
         self.assertEqual(button.props.icon_widget, icon)
@@ -632,6 +640,35 @@ class TestGtk(unittest.TestCase):
 
 
 @unittest.skipUnless(Gtk, 'Gtk not available')
+class TestWidget(unittest.TestCase):
+    def test_style_get_property_gvalue(self):
+        button = Gtk.Button()
+        value = GObject.Value(int, -42)
+        button.style_get_property('focus-padding', value)
+        # Test only that the style property changed since we can't actuall
+        # set it.
+        self.assertNotEqual(value.get_int(), -42)
+
+    def test_style_get_property_return_with_explicit_gvalue(self):
+        button = Gtk.Button()
+        value = GObject.Value(int, -42)
+        result = button.style_get_property('focus-padding', value)
+        self.assertIsInstance(result, int)
+        self.assertNotEqual(result, -42)
+
+    def test_style_get_property_return_with_implicit_gvalue(self):
+        button = Gtk.Button()
+        result = button.style_get_property('focus-padding')
+        self.assertIsInstance(result, int)
+        self.assertNotEqual(result, -42)
+
+    def test_style_get_property_error(self):
+        button = Gtk.Button()
+        with self.assertRaises(ValueError):
+            button.style_get_property('not-a-valid-style-property')
+
+
+@unittest.skipUnless(Gtk, 'Gtk not available')
 class TestSignals(unittest.TestCase):
     def test_class_closure_override_with_aliased_type(self):
         class WindowWithSizeAllocOverride(Gtk.ScrolledWindow):
@@ -664,6 +701,30 @@ class TestSignals(unittest.TestCase):
             self.assertIsInstance(win._alloc_value, Gdk.Rectangle)
             self.assertTrue(win._alloc_error is None, win._alloc_error)
 
+    @unittest.expectedFailure  # https://bugzilla.gnome.org/show_bug.cgi?id=735693
+    def test_overlay_child_position(self):
+        def get_child_position(overlay, widget, rect, user_data=None):
+            rect.x = 1
+            rect.y = 2
+            rect.width = 3
+            rect.height = 4
+            return True
+
+        overlay = Gtk.Overlay()
+        overlay.connect('get-child-position', get_child_position)
+
+        rect = Gdk.Rectangle()
+        rect.x = -1
+        rect.y = -1
+        rect.width = -1
+        rect.height = -1
+
+        overlay.emit('get-child-position', None, rect)
+        self.assertEqual(rect.x, 1)
+        self.assertEqual(rect.y, 2)
+        self.assertEqual(rect.width, 3)
+        self.assertEqual(rect.height, 4)
+
 
 @unittest.skipUnless(Gtk, 'Gtk not available')
 class TestBuilder(unittest.TestCase):
@@ -682,28 +743,28 @@ class TestBuilder(unittest.TestCase):
         obj = Obj()
         obj.foo = lambda: None
 
-        handler, args = Gtk.Builder._extract_handler_and_args(obj, 'foo')
+        handler, args = Gtk._extract_handler_and_args(obj, 'foo')
         self.assertEqual(handler, obj.foo)
         self.assertEqual(len(args), 0)
 
     def test_extract_handler_and_args_dict(self):
         obj = {'foo': lambda: None}
 
-        handler, args = Gtk.Builder._extract_handler_and_args(obj, 'foo')
+        handler, args = Gtk._extract_handler_and_args(obj, 'foo')
         self.assertEqual(handler, obj['foo'])
         self.assertEqual(len(args), 0)
 
     def test_extract_handler_and_args_with_seq(self):
         obj = {'foo': (lambda: None, 1, 2)}
 
-        handler, args = Gtk.Builder._extract_handler_and_args(obj, 'foo')
+        handler, args = Gtk._extract_handler_and_args(obj, 'foo')
         self.assertEqual(handler, obj['foo'][0])
         self.assertSequenceEqual(args, [1, 2])
 
     def test_extract_handler_and_args_no_handler_error(self):
         obj = dict(foo=lambda: None)
         self.assertRaises(AttributeError,
-                          Gtk.Builder._extract_handler_and_args,
+                          Gtk._extract_handler_and_args,
                           obj, 'not_a_handler')
 
     def test_builder_with_handler_and_args(self):
@@ -1796,3 +1857,84 @@ class TestTextBuffer(unittest.TestCase):
                                         None)
         self.assertEqual(start.get_offset(), 6)
         self.assertEqual(end.get_offset(), 11)
+
+    def test_insert_text_signal_location_modification(self):
+        # Regression test for: https://bugzilla.gnome.org/show_bug.cgi?id=736175
+
+        def callback(buffer, location, text, length):
+            location.assign(buffer.get_end_iter())
+
+        buffer = Gtk.TextBuffer()
+        buffer.set_text('first line\n')
+        buffer.connect('insert-text', callback)
+
+        # attempt insertion at the beginning of the buffer, the callback will
+        # modify the insert location to the end.
+        buffer.place_cursor(buffer.get_start_iter())
+        buffer.insert_at_cursor('second line\n')
+
+        self.assertEqual(buffer.get_property('text'),
+                         'first line\nsecond line\n')
+
+
+@unittest.skipUnless(Gtk, 'Gtk not available')
+class TestContainer(unittest.TestCase):
+    def test_child_set_property(self):
+        box = Gtk.Box()
+        child = Gtk.Button()
+        box.pack_start(child, expand=False, fill=True, padding=0)
+
+        box.child_set_property(child, 'padding', 42)
+
+        value = GObject.Value(int)
+        box.child_get_property(child, 'padding', value)
+        self.assertEqual(value.get_int(), 42)
+
+    def test_child_get_property_gvalue(self):
+        box = Gtk.Box()
+        child = Gtk.Button()
+        box.pack_start(child, expand=False, fill=True, padding=42)
+
+        value = GObject.Value(int)
+        box.child_get_property(child, 'padding', value)
+        self.assertEqual(value.get_int(), 42)
+
+    def test_child_get_property_return_with_explicit_gvalue(self):
+        box = Gtk.Box()
+        child = Gtk.Button()
+        box.pack_start(child, expand=False, fill=True, padding=42)
+
+        value = GObject.Value(int)
+        result = box.child_get_property(child, 'padding', value)
+        self.assertEqual(result, 42)
+
+    def test_child_get_property_return_with_implicit_gvalue(self):
+        box = Gtk.Box()
+        child = Gtk.Button()
+        box.pack_start(child, expand=False, fill=True, padding=42)
+
+        result = box.child_get_property(child, 'padding')
+        self.assertEqual(result, 42)
+
+    def test_child_get_property_error(self):
+        box = Gtk.Box()
+        child = Gtk.Button()
+        box.pack_start(child, expand=False, fill=True, padding=42)
+        with self.assertRaises(ValueError):
+            box.child_get_property(child, 'not-a-valid-child-property')
+
+    def test_child_get_and_set(self):
+        box = Gtk.Box()
+        child = Gtk.Button()
+        box.pack_start(child, expand=True, fill=True, padding=42)
+
+        expand, fill, padding = box.child_get(child, 'expand', 'fill', 'padding')
+        self.assertEqual(expand, True)
+        self.assertEqual(fill, True)
+        self.assertEqual(padding, 42)
+
+        box.child_set(child, expand=False, fill=False, padding=21, pack_type=1)
+        expand, fill, padding, pack_type = box.child_get(child, 'expand', 'fill', 'padding', 'pack-type')
+        self.assertEqual(expand, False)
+        self.assertEqual(fill, False)
+        self.assertEqual(padding, 21)

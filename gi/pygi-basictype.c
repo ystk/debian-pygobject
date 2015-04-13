@@ -26,7 +26,6 @@
 #include "pygi-private.h"
 
 #ifdef G_OS_WIN32
-#ifdef _MSC_VER
 #include <math.h>
 
 #ifndef NAN
@@ -38,7 +37,6 @@ static const unsigned long __nan[2] = {0xffffffff, 0x7fffffff};
 #define INFINITY HUGE_VAL
 #endif
 
-#endif
 #endif
 
 
@@ -509,7 +507,7 @@ _pygi_marshal_from_py_basic_type (PyObject   *object,   /* in */
     return TRUE;
 }
 
-static gboolean
+gboolean
 _pygi_marshal_from_py_basic_type_cache_adapter (PyGIInvokeState   *state,
                                                 PyGICallableCache *callable_cache,
                                                 PyGIArgCache      *arg_cache,
@@ -707,7 +705,7 @@ _pygi_marshal_to_py_basic_type (GIArgument  *arg,
     return NULL;
 }
 
-static PyObject *
+PyObject *
 _pygi_marshal_to_py_basic_type_cache_adapter (PyGIInvokeState   *state,
                                               PyGICallableCache *callable_cache,
                                               PyGIArgCache      *arg_cache,

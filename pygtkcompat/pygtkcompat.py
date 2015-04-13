@@ -38,8 +38,10 @@ import warnings
 try:
     # Python 3
     from collections import UserList
-    from imp import reload
     UserList  # pyflakes
+    with warnings.catch_warnings():
+        warnings.simplefilter('ignore')
+        from imp import reload
 except ImportError:
     # Python 2 ships that in a different module
     from UserList import UserList
@@ -357,10 +359,10 @@ def enable_gtk(version='3.0'):
     except AttributeError:
         pass
 
-    #AccelGroup
+    # AccelGroup
     Gtk.AccelGroup.connect_group = Gtk.AccelGroup.connect
 
-    #StatusIcon
+    # StatusIcon
     Gtk.status_icon_position_menu = Gtk.StatusIcon.position_menu
     Gtk.StatusIcon.set_tooltip = Gtk.StatusIcon.set_tooltip_text
 
@@ -484,18 +486,12 @@ def enable_gtk(version='3.0'):
 
     # gtk.keysyms
 
-    class Keysyms(object):
-        pass
-    keysyms = Keysyms()
+    with warnings.catch_warnings():
+        warnings.simplefilter('ignore', category=RuntimeWarning)
+        from gi.overrides import keysyms
+
     sys.modules['gtk.keysyms'] = keysyms
     Gtk.keysyms = keysyms
-    for name in dir(Gdk):
-        if name.startswith('KEY_'):
-            target = name[4:]
-            if target[0] in '0123456789':
-                target = '_' + target
-            value = getattr(Gdk, name)
-            setattr(keysyms, target, value)
 
     from . import generictreemodel
     Gtk.GenericTreeModel = generictreemodel.GenericTreeModel

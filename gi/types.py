@@ -55,6 +55,17 @@ class MetaClassHelper(object):
         for method_info in cls.__info__.get_methods():
             setattr(cls, method_info.__name__, method_info)
 
+    def _setup_class_methods(cls):
+        info = cls.__info__
+        class_struct = info.get_class_struct()
+        if class_struct is None:
+            return
+        for method_info in class_struct.get_methods():
+            name = method_info.__name__
+            # Don't mask regular methods or base class methods with TypeClass methods.
+            if not hasattr(cls, name):
+                setattr(cls, name, classmethod(method_info))
+
     def _setup_fields(cls):
         for field_info in cls.__info__.get_fields():
             name = field_info.get_name().replace('-', '_')
@@ -182,7 +193,7 @@ class _GObjectMetaBase(type):
         cls._type_register(cls.__dict__)
 
     def _type_register(cls, namespace):
-        ## don't register the class if already registered
+        # don't register the class if already registered
         if '__gtype__' in namespace:
             return
 
@@ -211,6 +222,8 @@ class GObjectMeta(_GObjectMetaBase, MetaClassHelper):
         if is_python_defined:
             cls._setup_vfuncs()
         elif is_gi_defined:
+            if isinstance(cls.__info__, ObjectInfo):
+                cls._setup_class_methods()
             cls._setup_methods()
             cls._setup_constants()
             cls._setup_native_vfuncs()
@@ -225,9 +238,19 @@ class GObjectMeta(_GObjectMetaBase, MetaClassHelper):
 
     @property
     def __doc__(cls):
+        """Meta class property which shows up on any class using this meta-class."""
         if cls == GObjectMeta:
             return ''
-        return generate_doc_string(cls.__info__)
+
+        doc = cls.__dict__.get('__doc__', None)
+        if doc is not None:
+            return doc
+
+        # For repository classes, dynamically generate a doc string if it wasn't overridden.
+        if cls.__module__.startswith(('gi.repository.', 'gi.overrides')):
+            return generate_doc_string(cls.__info__)
+
+        return None
 
 
 def mro(C):

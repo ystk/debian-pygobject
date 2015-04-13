@@ -95,8 +95,6 @@ pygi_marshal_cleanup_args_from_py_marshal_success (PyGIInvokeState   *state,
     for (i = 0; i < _pygi_callable_cache_args_len (cache); i++) {
         PyGIArgCache *arg_cache = _pygi_callable_cache_get_arg (cache, i);
         PyGIMarshalCleanupFunc cleanup_func = arg_cache->from_py_cleanup;
-        PyObject *py_arg = PyTuple_GET_ITEM (state->py_in_args,
-                                             arg_cache->py_arg_index);
         gpointer cleanup_data = state->args_cleanup_data[i];
 
         /* Only cleanup using args_cleanup_data when available.
@@ -105,8 +103,9 @@ pygi_marshal_cleanup_args_from_py_marshal_success (PyGIInvokeState   *state,
          * PyGIInvokeState.args_cleanup_data stores this data (via _invoke_marshal_in_args)
          * for the duration of the invoke up until this point.
          */
-        if (cleanup_func && cleanup_data != NULL &&
+        if (cleanup_func && cleanup_data != NULL && arg_cache->py_arg_index >= 0 &&
                 arg_cache->direction & PYGI_DIRECTION_FROM_PYTHON) {
+            PyObject *py_arg = PyTuple_GET_ITEM (state->py_in_args, arg_cache->py_arg_index);
             cleanup_func (state, arg_cache, py_arg, cleanup_data, TRUE);
             state->args_cleanup_data[i] = NULL;
         }
@@ -166,26 +165,30 @@ pygi_marshal_cleanup_args_from_py_parameter_fail (PyGIInvokeState   *state,
     for (i = 0; i < _pygi_callable_cache_args_len (cache)  && i <= failed_arg_index; i++) {
         PyGIArgCache *arg_cache = _pygi_callable_cache_get_arg (cache, i);
         PyGIMarshalCleanupFunc cleanup_func = arg_cache->from_py_cleanup;
-        gpointer data = state->arg_values[i].v_pointer;
-        PyObject *py_arg = PyTuple_GET_ITEM (state->py_in_args,
-                                             arg_cache->py_arg_index);
+        gpointer cleanup_data = state->args_cleanup_data[i];
+        PyObject *py_arg = NULL;
 
-        if (cleanup_func &&
-                arg_cache->direction == PYGI_DIRECTION_FROM_PYTHON &&
-                    data != NULL) {
+        if (arg_cache->py_arg_index < 0) {
+            continue;
+        }
+        py_arg = PyTuple_GET_ITEM (state->py_in_args, arg_cache->py_arg_index);
+
+        if (cleanup_func && cleanup_data != NULL &&
+                arg_cache->direction == PYGI_DIRECTION_FROM_PYTHON) {
             cleanup_func (state,
                           arg_cache,
                           py_arg,
-                          data,
+                          cleanup_data,
                           i < failed_arg_index);
 
-        } else if (arg_cache->is_caller_allocates && data != NULL) {
+        } else if (arg_cache->is_caller_allocates && cleanup_data != NULL) {
             _cleanup_caller_allocates (state,
                                        arg_cache,
                                        py_arg,
-                                       data,
+                                       cleanup_data,
                                        FALSE);
         }
+        state->args_cleanup_data[i] = NULL;
     }
 }
 

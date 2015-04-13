@@ -28,6 +28,7 @@
 #include "pygparamspec.h"
 #include "pygtype.h"
 
+#include "pygi-type.h"
 #include "pygi-value.h"
 
 /* -------------- __gtype__ objects ---------------------------- */
@@ -621,6 +622,7 @@ pyg_type_lookup(GType type)
 
     /* recursively lookup types */
     while (ptype) {
+        pygi_type_import_by_g_type (ptype);
 	if ((tm = g_type_get_qdata(ptype, pyg_type_marshal_key)) != NULL)
 	    break;
 	ptype = g_type_parent(ptype);
@@ -888,7 +890,8 @@ pyg_signal_class_closure_marshal(GClosure *closure,
 	    && item->ob_refcnt != 1) {
 	    PyGBoxed* boxed_item = (PyGBoxed*)item;
 	    if (!boxed_item->free_on_dealloc) {
-		boxed_item->boxed = g_boxed_copy(boxed_item->gtype, boxed_item->boxed);
+		gpointer boxed_ptr = pyg_boxed_get_ptr (boxed_item);
+		pyg_boxed_set_ptr (boxed_item, g_boxed_copy (boxed_item->gtype, boxed_ptr));
 		boxed_item->free_on_dealloc = TRUE;
 	    }
 	}

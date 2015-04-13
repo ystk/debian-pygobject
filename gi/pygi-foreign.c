@@ -63,24 +63,24 @@ do_lookup (const gchar *namespace, const gchar *name)
     return NULL;
 }
 
+static PyObject *
+pygi_struct_foreign_load_module (const char *namespace)
+{
+    gchar *module_name = g_strconcat ("gi._gi_", namespace, NULL);
+    PyObject *module = PyImport_ImportModule (module_name);
+    g_free (module_name);
+    return module;
+}
+
 static PyGIForeignStruct *
-pygi_struct_foreign_lookup (GIBaseInfo *base_info)
+pygi_struct_foreign_lookup_by_name (const char *namespace, const char *name)
 {
     PyGIForeignStruct *result;
-    const gchar *namespace = g_base_info_get_namespace (base_info);
-    const gchar *name = g_base_info_get_name (base_info);
-
-    if (foreign_structs == NULL) {
-        init_foreign_structs ();
-    }
 
     result = do_lookup (namespace, name);
 
     if (result == NULL) {
-        gchar *module_name = g_strconcat ("gi._gi_", namespace, NULL);
-        PyObject *module = PyImport_ImportModule (module_name);
-
-        g_free (module_name);
+        PyObject *module = pygi_struct_foreign_load_module (namespace);
 
         if (module == NULL)
             PyErr_Clear ();
@@ -92,12 +92,21 @@ pygi_struct_foreign_lookup (GIBaseInfo *base_info)
 
     if (result == NULL) {
         PyErr_Format (PyExc_TypeError,
-                      "Couldn't find conversion for foreign struct '%s.%s'",
+                      "Couldn't find foreign struct converter for '%s.%s'",
                       namespace,
                       name);
     }
 
     return result;
+}
+
+static PyGIForeignStruct *
+pygi_struct_foreign_lookup (GIBaseInfo *base_info)
+{
+    const gchar *namespace = g_base_info_get_namespace (base_info);
+    const gchar *name = g_base_info_get_name (base_info);
+
+    return pygi_struct_foreign_lookup_by_name (namespace, name);
 }
 
 PyObject *
@@ -151,11 +160,11 @@ pygi_struct_foreign_release (GIBaseInfo *base_info,
 }
 
 void
-pygi_register_foreign_struct_real (const char* namespace_,
-                                   const char* name,
-                                   PyGIArgOverrideToGIArgumentFunc to_func,
-                                   PyGIArgOverrideFromGIArgumentFunc from_func,
-                                   PyGIArgOverrideReleaseFunc release_func)
+pygi_register_foreign_struct (const char* namespace_,
+                              const char* name,
+                              PyGIArgOverrideToGIArgumentFunc to_func,
+                              PyGIArgOverrideFromGIArgumentFunc from_func,
+                              PyGIArgOverrideReleaseFunc release_func)
 {
     PyGIForeignStruct *new_struct = g_slice_new (PyGIForeignStruct);
     new_struct->namespace = namespace_;
@@ -165,4 +174,43 @@ pygi_register_foreign_struct_real (const char* namespace_,
     new_struct->release_func = release_func;
 
     g_ptr_array_add (foreign_structs, new_struct);
+}
+
+PyObject *
+pygi_require_foreign (PyObject *self, PyObject *args, PyObject *kwargs)
+{
+    static char *kwlist[] = { "namespace", "symbol", NULL };
+    const char *namespace = NULL;
+    const char *symbol = NULL;
+
+    if (!PyArg_ParseTupleAndKeywords (args, kwargs,
+                                      "s|z:require_foreign",
+                                      kwlist, &namespace, &symbol)) {
+        return NULL;
+    }
+
+    if (symbol) {
+        PyGIForeignStruct *foreign;
+        foreign = pygi_struct_foreign_lookup_by_name (namespace, symbol);
+        if (foreign == NULL) {
+            return NULL;
+        }
+    } else {
+        PyObject *module = pygi_struct_foreign_load_module (namespace);
+        if (module) {
+            Py_DECREF (module);
+        } else {
+            return NULL;
+        }
+    }
+
+    Py_RETURN_NONE;
+}
+
+void
+pygi_foreign_init (void)
+{
+    if (foreign_structs == NULL) {
+        init_foreign_structs ();
+    }
 }

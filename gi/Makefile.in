@@ -87,8 +87,10 @@ DIST_COMMON = $(srcdir)/Makefile.in $(srcdir)/Makefile.am \
 	$(top_srcdir)/depcomp $(am__pkginclude_HEADERS_DIST)
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/as-ac-expand.m4 \
-	$(top_srcdir)/m4/jhflags.m4 $(top_srcdir)/m4/python.m4 \
-	$(top_srcdir)/configure.ac
+	$(top_srcdir)/m4/jhflags.m4 $(top_srcdir)/m4/libtool.m4 \
+	$(top_srcdir)/m4/ltoptions.m4 $(top_srcdir)/m4/ltsugar.m4 \
+	$(top_srcdir)/m4/ltversion.m4 $(top_srcdir)/m4/lt~obsolete.m4 \
+	$(top_srcdir)/m4/python.m4 $(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
 mkinstalldirs = $(install_sh) -d
@@ -127,7 +129,7 @@ LTLIBRARIES = $(pygi_LTLIBRARIES)
 am__DEPENDENCIES_1 =
 @OS_WIN32_TRUE@am__DEPENDENCIES_2 = $(am__DEPENDENCIES_1)
 _gi_la_DEPENDENCIES = $(am__DEPENDENCIES_2) $(am__DEPENDENCIES_1) \
-	$(am__DEPENDENCIES_1)
+	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
 am__gi_la_OBJECTS = _gi_la-gobjectmodule.lo _gi_la-pygboxed.lo \
 	_gi_la-pygenum.lo _gi_la-pygflags.lo _gi_la-pyginterface.lo \
 	_gi_la-pygobject.lo _gi_la-pygparamspec.lo \
@@ -155,7 +157,8 @@ _gi_la_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(_gi_la_CFLAGS) $(CFLAGS) \
 	$(_gi_la_LDFLAGS) $(LDFLAGS) -o $@
 _gi_cairo_la_DEPENDENCIES = $(am__DEPENDENCIES_2) \
-	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
+	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
+	$(am__DEPENDENCIES_1)
 am__gi_cairo_la_OBJECTS = _gi_cairo_la-pygi-foreign-cairo.lo
 _gi_cairo_la_OBJECTS = $(am__gi_cairo_la_OBJECTS)
 _gi_cairo_la_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
@@ -340,6 +343,7 @@ NM = @NM@
 NMEDIT = @NMEDIT@
 OBJDUMP = @OBJDUMP@
 OBJEXT = @OBJEXT@
+OS_EXT = @OS_EXT@
 OTOOL = @OTOOL@
 OTOOL64 = @OTOOL64@
 PACKAGE = @PACKAGE@
@@ -492,6 +496,7 @@ _gi_la_SOURCES = \
 	pygi-info.h \
 	pygi-foreign.c \
 	pygi-foreign.h \
+	pygi-foreign-api.h \
 	pygi-struct.c \
 	pygi-struct.h \
 	pygi-source.c \
@@ -550,7 +555,8 @@ _gi_la_CPPFLAGS = \
 _gi_la_LIBADD = \
 	$(extension_libadd) \
 	$(GLIB_LIBS) \
-	$(GI_LIBS)
+	$(GI_LIBS) \
+	$(FFI_LIBS)
 
 _gi_la_LDFLAGS = \
 	$(extension_ldflags) \
@@ -561,6 +567,7 @@ _gi_cairo_la_SOURCES = \
 
 _gi_cairo_la_CFLAGS = \
 	$(GI_CFLAGS) \
+	$(CAIRO_CFLAGS) \
 	$(PYCAIRO_CFLAGS)
 
 _gi_cairo_la_CPPFLAGS = \
@@ -569,6 +576,7 @@ _gi_cairo_la_CPPFLAGS = \
 _gi_cairo_la_LIBADD = \
 	$(extension_libadd) \
 	$(GI_LIBS) \
+	$(CAIRO_LIBS) \
 	$(PYCAIRO_LIBS)
 
 _gi_cairo_la_LDFLAGS = \

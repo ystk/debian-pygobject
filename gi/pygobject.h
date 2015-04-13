@@ -57,6 +57,8 @@ typedef struct {
 } PyGBoxed;
 
 #define pyg_boxed_get(v,t)      ((t *)((PyGBoxed *)(v))->boxed)
+#define pyg_boxed_get_ptr(v)    (((PyGBoxed *)(v))->boxed)
+#define pyg_boxed_set_ptr(v,p)  (((PyGBoxed *)(v))->boxed = (gpointer)p)
 #define pyg_boxed_check(v,typecode) (PyObject_TypeCheck(v, &PyGBoxed_Type) && ((PyGBoxed *)(v))->gtype == typecode)
 
 typedef struct {
@@ -66,6 +68,8 @@ typedef struct {
 } PyGPointer;
 
 #define pyg_pointer_get(v,t)      ((t *)((PyGPointer *)(v))->pointer)
+#define pyg_pointer_get_ptr(v)    (((PyGPointer *)(v))->pointer)
+#define pyg_pointer_set_ptr(v,p)  (((PyGPointer *)(v))->pointer = (gpointer)p)
 #define pyg_pointer_check(v,typecode) (PyObject_TypeCheck(v, &PyGPointer_Type) && ((PyGPointer *)(v))->gtype == typecode)
 
 typedef void (*PyGFatalExceptionFunc) (void);
@@ -76,8 +80,13 @@ typedef struct {
     GParamSpec *pspec;
 } PyGParamSpec;
 
-#define PyGParamSpec_Get(v) (((PyGParamSpec *)v)->pspec)
-#define PyGParamSpec_Check(v) (PyObject_TypeCheck(v, &PyGParamSpec_Type))
+#define pyg_param_spec_get(v)    (((PyGParamSpec *)v)->pspec)
+#define pyg_param_spec_set(v,p)  (((PyGParamSpec *)v)->pspec = (GParamSpec*)p)
+#define pyg_param_spec_check(v)  (PyObject_TypeCheck(v, &PyGParamSpec_Type))
+
+/* Deprecated in favor of lower case with underscore macros above. */
+#define PyGParamSpec_Get    pyg_param_spec_get
+#define PyGParamSpec_Check  pyg_param_spec_check
 
 typedef int (*PyGClassInitFunc) (gpointer gclass, PyTypeObject *pyclass);
 typedef PyTypeObject * (*PyGTypeRegistrationFunction) (const gchar *name,

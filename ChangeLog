@@ -1,8 +1,2180 @@
-commit 6638b188abed038b4dfa2589826ef36a2145b957
+commit f20df385f480b65a8128986ce3df4022b324ade0
+Author: Simon Feltman <sfeltman@src.gnome.org>
+Date:   Mon Sep 22 12:38:35 2014 -0700
+
+    release 3.14.0
+
+ NEWS | 3 +++
+ 1 file changed, 3 insertions(+)
+
+commit 309d4100a08867d18420586c3b1f8709c360250f
+Author: Simon Feltman <sfeltman@src.gnome.org>
+Date:   Mon Sep 22 12:24:32 2014 -0700
+
+    configure.ac: pre release version bump to 3.14.0
+
+ configure.ac | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+commit 4b7c985aa57f8026da96d174454b308858ebd1cc
+Author: Simon Feltman <sfeltman@src.gnome.org>
+Date:   Mon Sep 15 15:46:04 2014 -0700
+
+    release 3.13.92
+
+ NEWS | 7 +++++++
+ 1 file changed, 7 insertions(+)
+
+commit 79bad703a089a4b0c31fcdb143b889667f5fa197
+Author: Simon Feltman <sfeltman@src.gnome.org>
+Date:   Fri Sep 12 17:10:04 2014 -0700
+
+    tests: Add test for Gio.Application.add_main_option()
+
+ tests/test_gio.py | 29 +++++++++++++++++++++++++++++
+ 1 file changed, 29 insertions(+)
+
+commit a2f98a9ba0b0dda0d3cf59651327e5c93d5479d6
+Author: Simon Feltman <sfeltman@src.gnome.org>
+Date:   Thu Sep 11 19:32:53 2014 -0700
+
+    Split test_everything.TestEverything.test_string() into multiple tests
+
+    https://bugzilla.gnome.org/show_bug.cgi?id=735193
+
+ tests/test_everything.py | 25 +++++++++++++++++++------
+ 1 file changed, 19 insertions(+), 6 deletions(-)
+
+commit 6674701b6de02353738b9dc04ab88de23996704e
+Author: Simon Feltman <sfeltman@src.gnome.org>
+Date:   Thu Sep 11 19:08:53 2014 -0700
+
+    tests: Split array tests up
+
+    Split test_everything.TestEverything.test_array(),
+    test_array_fixed_size(),
+    and test_ptrarray() into functions of a finer granularity. This
+    allows for
+    easier diagnosis of problems and leaks when they occur.
+
+    https://bugzilla.gnome.org/show_bug.cgi?id=735193
+
+ tests/test_everything.py | 37 ++++++++++++++++++++++++++++++++-----
+ 1 file changed, 32 insertions(+), 5 deletions(-)
+
+commit d1bae18ba0514864a37bf5d182605e2100c28d7e
+Author: Simon Feltman <sfeltman@src.gnome.org>
+Date:   Thu Sep 11 16:17:13 2014 -0700
+
+    tests: Split test_strv() into multiple tests
+
+    https://bugzilla.gnome.org/show_bug.cgi?id=735193
+
+ tests/test_everything.py | 10 +++++++++-
+ 1 file changed, 9 insertions(+), 1 deletion(-)
+
+commit 6181f724bc2c6ea30194c961cb15b2c543a48f95
+Author: Simon Feltman <sfeltman@src.gnome.org>
+Date:   Wed Sep 10 19:06:35 2014 -0700
+
+    Fix invalid read error in argument cleanup code
+
+    Always set initial length argument index for arrays to -1. Ensure
+    we don't
+    attempt retrieving Python cleanup arguments until we know it is valid.
+    This was causing an invalid read in test_gi.TestArray.test_array_out()
+
+ gi/pygi-array.c           |  1 +
+ gi/pygi-marshal-cleanup.c | 13 ++++++++-----
+ 2 files changed, 9 insertions(+), 5 deletions(-)
+
+commit 972e944ad4b2aac03c61633b8c277e35395c114c
+Author: Simon Feltman <sfeltman@src.gnome.org>
+Date:   Wed Sep 10 18:55:45 2014 -0700
+
+    tests: Increase num-callers for valgrind runs
+
+    Additionally split valgrind check variations over multiple lines
+    for readability.
+
+ tests/Makefile.am | 23 ++++++++++++++++++++---
+ 1 file changed, 20 insertions(+), 3 deletions(-)
+
+commit d70b300c7415dd7b20ff88b09fe835690da19831
+Author: Simon Feltman <sfeltman@src.gnome.org>
+Date:   Sat Sep 6 23:58:25 2014 -0700
+
+    Fix memory management problems with struct arguments to signals
+
+    Replicate struct marshaling logic for determining if struct arguments
+    to signals should be passed by reference to callbacks.
+    Maintain a list of these structs and apply an in-place copy of
+    the struct
+    pointer if the struct wrapper is held longer than the duration of the
+    Python callback. This allows for both mutation of struct arguments
+    from
+    callbacks as well as memory safety incase a callbacks holds onto
+    the struct.
+
+    https://bugzilla.gnome.org/show_bug.cgi?id=736175
+
+ gi/pygi-boxed.c             | 20 ++++++++++++++++++++
+ gi/pygi-boxed.h             |  2 ++
+ gi/pygi-signal-closure.c    | 43
+ +++++++++++++++++++++++++++++++++++++------
+ tests/test_overrides_gtk.py |  1 -
+ tests/test_signal.py        | 27 +++++++++++++++++++++++++++
+ 5 files changed, 86 insertions(+), 7 deletions(-)
+
+commit 09161ff690ad37c94668d5d65191f4d84829d41f
+Author: Simon Feltman <sfeltman@src.gnome.org>
+Date:   Sun Sep 7 15:53:35 2014 -0700
+
+    Limit foreign struct checks to GI_INFO_TYPE_STRUCT
+
+    Add struct type check before calling g_struct_info_is_foreign().
+
+    https://bugzilla.gnome.org/show_bug.cgi?id=736175
+
+ gi/pygi-argument.c       | 11 ++++++++---
+ gi/pygi-struct-marshal.c |  7 +++++--
+ 2 files changed, 13 insertions(+), 5 deletions(-)
+
+commit 4ebb1f5a4750712bd919a31103ed8c8d6af483b3
+Author: Simon Feltman <sfeltman@src.gnome.org>
+Date:   Sat Sep 6 15:16:06 2014 -0700
+
+    tests: Add failing regression test for Gtk.TextBuffer.insert-text
+    signal
+
+    https://bugzilla.gnome.org/show_bug.cgi?id=736175
+
+ tests/test_overrides_gtk.py | 19 +++++++++++++++++++
+ 1 file changed, 19 insertions(+)
+
+commit 2f355dc4e9724f25c200d30db1c8fbc4695f9ab7
+Author: Simon Feltman <sfeltman@src.gnome.org>
+Date:   Mon Sep 1 17:36:46 2014 -0700
+
+    configure.ac: post release version bump to 3.13.92
+
+ configure.ac | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+commit 68d34721a21bfac1a43252bd92612c2460ea60dd
+Author: Simon Feltman <sfeltman@src.gnome.org>
+Date:   Mon Sep 1 17:31:39 2014 -0700
+
+    release 3.13.91
+
+ NEWS | 15 +++++++++++++++
+ 1 file changed, 15 insertions(+)
+
+commit 8c6cf22d74075b7169512b9e7773a511abb9b759
+Author: Simon Feltman <sfeltman@src.gnome.org>
+Date:   Mon Sep 1 16:48:15 2014 -0700
+
+    docs: Skip "Constructors" header for anonymous structs
+
+    Structs which don't have a size or constructor should not procuce
+    any doc
+    string. The trailing "::" was causing a problem with sphinx.
+
+ gi/docstring.py         | 8 ++++++--
+ tests/test_docstring.py | 3 ++-
+ 2 files changed, 8 insertions(+), 3 deletions(-)
+
+commit c1ea60be30ebf11c2e5415180305e4ac3c573f57
+Author: Simon Feltman <sfeltman@src.gnome.org>
+Date:   Mon Sep 1 15:21:04 2014 -0700
+
+    docs: Fix error when using may_return_null()
+
+    Fix error with an untested code path opened up by commit 1f78dc0ace.
+
+ gi/docstring.py         | 3 ++-
+ tests/test_docstring.py | 4 ++++
+ 2 files changed, 6 insertions(+), 1 deletion(-)
+
+commit 1f78dc0ace5282def9f1f700bfe4523de07e7549
+Author: Simon Feltman <sfeltman@src.gnome.org>
+Date:   Fri Aug 29 16:49:14 2014 -0700
+
+    docs: Fix function doc string generator return types
+
+    Change skip_return() access into a function call. This was causing
+    return type doc strings to always be skipped.
+
+ gi/docstring.py         | 2 +-
+ tests/test_docstring.py | 8 ++++++--
+ 2 files changed, 7 insertions(+), 3 deletions(-)
+
+commit 28d0337f0e3d4b0e9c4350ce5d6cf0cb68da843f
+Author: Simon Feltman <sfeltman@src.gnome.org>
+Date:   Fri Aug 29 14:18:28 2014 -0700
+
+    Special case signal output arguments which are structs as
+    pass-by-reference
+
+    Add a special case which avoids copying of struct arguments marked
+    as output
+    to signals. Since we don't currently support output arguments,
+    users have
+    come to rely on a pass-by-reference bug which was fixed and caused
+    this to
+    regress (bug 722899). Add unittest which is currently failing due
+    to a number
+    of issues with emit() not supporting type annotations or output
+    arguments
+    (bug 735693).
+
+    https://bugzilla.gnome.org/show_bug.cgi?id=735486
+
+ gi/pygi-signal-closure.c    | 41
+ +++++++++++++++++++++++++++++++++++------
+ tests/test_overrides_gtk.py | 24 ++++++++++++++++++++++++
+ 2 files changed, 59 insertions(+), 6 deletions(-)
+
+commit 16f8f687eae0caa1e4059fd62bd1f9d4c7f655f7
+Author: Simon Feltman <sfeltman@src.gnome.org>
+Date:   Wed Aug 27 23:55:06 2014 -0700
+
+    Ignore closure callbacks when Python is not initialized
+
+    Add an immediate return in ffi closures if Python is not initialized.
+    This fixes rare events when which lead to a segfault when a process
+    is exiting.
+
+    https://bugzilla.gnome.org/show_bug.cgi?id=722562
+
+ gi/pygi-closure.c | 7 +++++++
+ 1 file changed, 7 insertions(+)
+
+commit 27a14679dce33f64bbb5d77677eba83849f168ff
+Author: Christoph Reiter <reiter.christoph@gmail.com>
+Date:   Fri Aug 22 21:51:31 2014 -0700
+
+    Change boxed init with args to warn instead of raise
+
+    Replace raising a TypeError in gi.types.Boxed() with a warning.
+    Even though passing arguments or keywords to the parent class is
+    incorrect here, raising an exception was causing a bit of fallout
+    in some apps (Gramps).
+
+    https://bugzilla.gnome.org/show_bug.cgi?id=727810
+
+ gi/pygi-boxed.c  |  5 ++++-
+ tests/test_gi.py | 13 +++++++++++--
+ 2 files changed, 15 insertions(+), 3 deletions(-)
+
+commit 6008748bd7ecc6e5c933e6902c77d8485b905a6f
+Author: Simon Feltman <sfeltman@src.gnome.org>
+Date:   Fri Aug 22 02:16:10 2014 -0700
+
+    tests: Add test for GLib.spawn_async_with_pipes()
+
+    https://bugzilla.gnome.org/show_bug.cgi?id=735213
+
+ tests/test_signal.py     |  2 +-
+ tests/test_subprocess.py | 17 +++++++++++++++++
+ 2 files changed, 18 insertions(+), 1 deletion(-)
+
+commit 983276fb1cbc261d062ef93ba2266d08a5a6f423
+Author: Simon Feltman <sfeltman@src.gnome.org>
+Date:   Thu Aug 21 17:16:31 2014 -0700
+
+    Revert "Replace statically bound GLib.Variant.new_tuple() with GI"
+
+    This was accidentally pushed.
+    Revert commit 35c6540c42a01e1155f44533cc09e6c9f94b6613.
+
+ gi/gimodule.c        | 39 +++++++++++++++++++++++++++++++++++++++
+ gi/overrides/GLib.py | 12 +++++++-----
+ 2 files changed, 46 insertions(+), 5 deletions(-)
+
+commit b7a4e68a224ab66f67e45667023f74dd743e6177
+Author: Christoph Reiter <reiter.christoph@gmail.com>
+Date:   Fri Aug 22 01:04:40 2014 +0200
+
+    Fix crash in GList/GSList marshaling error handling path.
+
+    In case PySequence_GetItem() failed, the retured NULL was passed
+    to PyDECREF.
+
+    https://bugzilla.gnome.org/show_bug.cgi?id=735201
+
+ gi/pygi-list.c   |  4 ++--
+ tests/test_gi.py | 16 ++++++++++++++++
+ 2 files changed, 18 insertions(+), 2 deletions(-)
+
+commit 35c6540c42a01e1155f44533cc09e6c9f94b6613
+Author: Simon Feltman <sfeltman@src.gnome.org>
+Date:   Thu Aug 21 15:11:39 2014 -0700
+
+    Replace statically bound GLib.Variant.new_tuple() with GI
+
+    Remove the static implementation of _wrap_pyg_variant_new_tuple with
+    usage of the dynamic version coming from GI. Array marshalling has
+    drastically improved in recent years making the dynamic version usable
+    with a small compatibility shim for the arguments.
+
+    https://bugzilla.gnome.org/show_bug.cgi?id=735199
+
+ gi/gimodule.c        | 39 ---------------------------------------
+ gi/overrides/GLib.py | 12 +++++-------
+ 2 files changed, 5 insertions(+), 46 deletions(-)
+
+commit c1d387540a0b2db66e860c574b070051a5431914
+Author: Simon Feltman <sfeltman@src.gnome.org>
+Date:   Thu Aug 21 14:37:14 2014 -0700
+
+    Fix reference counting problems with GLib.Variant.new_tuple()
+
+    Always sink the results of g_variant_new_tuple() in the statically
+    bound wrapper. This matches the generic GI marshalling behavior
+    of passing GVariants to Python with transfer-none.
+
+    https://bugzilla.gnome.org/show_bug.cgi?id=735166
+
+ gi/gimodule.c                | 1 +
+ tests/test_overrides_glib.py | 7 +++++++
+ 2 files changed, 8 insertions(+)
+
+commit 9ce261f27742ba200f70003f162291a375d244d3
+Author: Simon Feltman <sfeltman@src.gnome.org>
+Date:   Tue Aug 19 14:57:31 2014 -0700
+
+    configure.ac: Fix darwin builds
+
+    Merge platform_win32 and os_win32 variables/case statements and
+    define "link_python_libs" for win32 as well as darwin.
+
+    https://bugzilla.gnome.org/show_bug.cgi?id=735068
+
+ configure.ac | 30 +++++++++++-------------------
+ 1 file changed, 11 insertions(+), 19 deletions(-)
+
+commit 92f0d6ebf9b67729d8253e15fce77b0ad0375573
+Author: Simon Feltman <sfeltman@src.gnome.org>
+Date:   Wed Aug 20 13:39:31 2014 -0700
+
+    Skip marshalling NULL output arguments in Python closures
+
+    Skip marshalling optional output arguments which are passed NULL
+    as the memory location. This fixes fallout from bug 727004.
+
+    https://bugzilla.gnome.org/show_bug.cgi?id=735090
+
+ gi/pygi-closure.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+commit d7e30c3cacf3cdd550e4dbfe2fa47aea1ae28147
+Author: Simon Feltman <sfeltman@src.gnome.org>
+Date:   Mon Aug 18 19:10:36 2014 -0700
+
+    configure.ac: post release version bump to 3.13.91
+
+ configure.ac | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+commit 17ba19c2e9b91a1bb8b03fabd4100d436c96975d
+Author: Simon Feltman <sfeltman@src.gnome.org>
+Date:   Mon Aug 18 19:07:10 2014 -0700
+
+    release 3.13.90
+
+ NEWS | 15 +++++++++++++++
+ 1 file changed, 15 insertions(+)
+
+commit 6bcfaf6e1e2331b704dd6067d45d6840e87632a2
+Author: Simon Feltman <sfeltman@src.gnome.org>
+Date:   Mon Aug 18 18:57:28 2014 -0700
+
+    configure.ac: pre release version bump to 3.13.90
+
+ configure.ac | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+commit 3b5b590599ca98cc51871878618cd59fc05212d1
+Author: Simon Feltman <sfeltman@src.gnome.org>
+Date:   Mon Aug 18 02:33:54 2014 -0700
+
+    gtk-demo: Don't use deprecated constructor for Gtk.Label
+
+ demos/gtk-demo/demos/pickers.py | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+commit 5b82051d23f8d759b6fa57a4e9327e300568c89f
+Author: Simon Feltman <sfeltman@src.gnome.org>
+Date:   Sat Aug 9 02:30:43 2014 -0700
+
+    Fast path Python Property getter when accessed through GObject
+    interfaces
+
+    Break do_get_property() call into a re-usable function.
+    Call do_get_property() Python implementations instead of going
+    through GObject
+    machinery for Python GObjects. This gives a performance boost
+    for Python
+    GObject properties when accessed via. obj.get_property() and
+    obj.props.
+
+    https://bugzilla.gnome.org/show_bug.cgi?id=723872
+
+ gi/gobjectmodule.c | 11 ++++-------
+ gi/pygi-property.c | 35 +++++++++++++++++++++++++++--------
+ gi/pygi-property.h |  3 +++
+ 3 files changed, 34 insertions(+), 15 deletions(-)
+
+commit 0a99f878e40c8d683157dea69c3c9ac40d13d734
+Author: Simon Feltman <sfeltman@src.gnome.org>
+Date:   Sat Aug 9 02:10:11 2014 -0700
+
+    Fast path Python Property getter when accessing descriptor directly
+
+    Call the Python implemented fget() when a property is accessed
+    directly
+    on a Python implemented GObject. This skips going through the GObject
+    machinery which ends up calling fget() and marshalling the results
+    through GValues.
+
+    https://bugzilla.gnome.org/show_bug.cgi?id=723872
+
+ gi/_propertyhelper.py | 19 +++++++++++++++----
+ 1 file changed, 15 insertions(+), 4 deletions(-)
+
+commit 74722386192ad27aac8855d4603d8120af82c98e
+Author: Simon Feltman <sfeltman@src.gnome.org>
+Date:   Mon Aug 18 02:05:58 2014 -0700
+
+    Don't use GI type for determining pointer extraction from GValues
+
+    Replace usage of g_type_is_a() with G_VALUE_HOLDS() when extracting
+    pointers from GValues being marshalled from properties and signals.
+    This fixes fallout from commit abdfb0f.
+
+ gi/pygi-value.c | 10 ++++------
+ 1 file changed, 4 insertions(+), 6 deletions(-)
+
+commit 2601011e9eb3b5f391161313ed568e5c4b67c99a
+Author: Simon Feltman <sfeltman@src.gnome.org>
+Date:   Fri Aug 8 23:58:17 2014 -0700
+
+    Fast path property access for basic types
+
+    Attempt marshalling with pygi_value_to_py_basic_type() prior to
+    looking at
+    GI info. This gives a quick conversion for basic types like bools,
+    ints, and
+    strings without having to go through GIArgument and GI
+    conversions. This
+    gives approximately a 3x performance boost for accessing these
+    types with
+    the unified GValue marshaller.
+
+    https://bugzilla.gnome.org/show_bug.cgi?id=726999
+
+ gi/pygi-property.c |  9 +++++++++
+ gi/pygi-value.c    | 26 ++++++++++++++++++--------
+ 2 files changed, 27 insertions(+), 8 deletions(-)
+
+commit 8f4b06f700ed79df32774fad8e2a2a922bfbfbe5
+Author: Simon Feltman <sfeltman@src.gnome.org>
+Date:   Fri Aug 8 16:31:01 2014 -0700
+
+    Break pyg_value_as_pyobject into two functions
+
+    Add pygi_value_to_py_basic_type() which is limited to handling basic
+    types that don't need introspection information when marshalling
+    to Python.
+    Add pygi_value_to_py_structured_type() for marshalling of structured
+    data
+    which can eventually accept GI type hints.
+
+    https://bugzilla.gnome.org/show_bug.cgi?id=726999
+
+ gi/pygi-value.c | 74
+ +++++++++++++++++++++++++++++++++++++++++++++++----------
+ gi/pygi-value.h |  6 +++++
+ 2 files changed, 68 insertions(+), 12 deletions(-)
+
+commit b0236d6fde137e0b2ecf7f5556ad5d53c22874bc
+Author: Simon Feltman <sfeltman@src.gnome.org>
+Date:   Fri Aug 8 20:55:28 2014 -0700
+
+    Unify property getters
+
+    Consolidate duplicate logic into pygi_get_property_value().
+    Use the function for GObject.get_property(), GObject.get_properties(),
+    and GObject.props.
+    Remove overridden expected failures in TestCGetPropertyMethod which
+    now work due to the unification.
+
+    https://bugzilla.gnome.org/show_bug.cgi?id=733893
+    https://bugzilla.gnome.org/show_bug.cgi?id=726999
+
+ gi/pygi-property.c       | 85 +++++++++++++++++++++++++++++-------------
+ gi/pygi-property.h       |  4 ++
+ gi/pygobject.c           | 97
+ +++++++-----------------------------------------
+ tests/test_properties.py | 38 -------------------
+ 4 files changed, 77 insertions(+), 147 deletions(-)
+
+commit abdfb0fa3f72f9bf822c472d16c90d6b1871610b
+Author: Simon Feltman <sfeltman@src.gnome.org>
+Date:   Mon Jul 28 19:09:30 2014 -0700
+
+    Merge pygi_get_property_value and _pygi_argument_from_g_value
+
+    Merge duplicated GValue marshaling code which has diverged over time
+    (commits 3606eb20, ee62df4d, e14ebab6, 8cfd596c, 9f50fd21, 0d099bdb,
+    and 216caf59).
+    Use _pygi_argument_to_array within pygi_get_property_value. This
+    is needed
+    in the new code for supporting GI_TYPE_TAG_ARRAY and also fixes
+    bug 669496.
+    Side effects of this change also include support for properties
+    holding
+    G_TYPE_FLAGS and G_TYPE_PARAM.
+
+    https://bugzilla.gnome.org/show_bug.cgi?id=726999
+
+ gi/pygi-property.c | 140
+ +++++------------------------------------------------
+ gi/pygi-value.c    |  24 ++++++---
+ 2 files changed, 28 insertions(+), 136 deletions(-)
+
+commit 142ff1903d34876db3d1bee5e9782ac49de12313
+Author: Simon Feltman <sfeltman@src.gnome.org>
+Date:   Mon Jul 28 04:40:36 2014 -0700
+
+    Never dup data structures when marshaling signal in arguments
+
+    Always assume transfer-none of GValue arguments to signal handlers.
+    A signal handler with arguments marked as transfer-full does not
+    make any sense, so assume they are always transfer-none.
+
+    https://bugzilla.gnome.org/show_bug.cgi?id=726999
+
+ gi/pygi-signal-closure.c | 4 +---
+ gi/pygi-value.c          | 4 +++-
+ 2 files changed, 4 insertions(+), 4 deletions(-)
+
+commit 04816f74194bd2c95b8b958dcf9ed5da5a83e001
+Author: Simon Feltman <sfeltman@src.gnome.org>
+Date:   Mon Jul 28 04:23:39 2014 -0700
+
+    Never dup data structures when marshaling from g_object_get_property()
+
+    Always use transfer-none with the results of g_object_get_property()
+    and assume g_value_unset() will cleanup the results. This gives us
+    control over memory of properties and limits property anotations to
+    value typing.
+
+    https://bugzilla.gnome.org/show_bug.cgi?id=726999
+
+ gi/pygi-property.c | 24 +++++++-----------------
+ 1 file changed, 7 insertions(+), 17 deletions(-)
+
+commit 85175047e66dfc0c0263eac91d8056a95d0a60a0
+Author: Simon Feltman <sfeltman@src.gnome.org>
+Date:   Tue Jul 29 19:29:28 2014 -0700
+
+    Refactor boxed wrapper memory management strategy
+
+    Change pygi_boxed_new() to accept "copy_boxed" instead of
+    "free_on_dealloc".
+    This changes memory management so the PyGIBoxed wrapper owns the boxed
+    pointer given to it. Use __del__ instead of dealloc for freeing
+    the boxed
+    memory. This is needed for edge cases where objects like GSource can
+    trigger the finalized callback during de-alloc, resulting in the
+    PyObjects
+    references counts being manipulated and triggering a re-entrant
+    de-alloc.
+    Add hack to keep Gtk.TreeIter.do_iter_next/previous implementations
+    working
+    which rely on pass-by-reference.
+    See also: https://bugzilla.gnome.org/show_bug.cgi?id=734465
+
+    https://bugzilla.gnome.org/show_bug.cgi?id=722899
+
+    https://bugzilla.gnome.org/show_bug.cgi?id=726999
+
+ gi/gimodule.c            |  6 +++-
+ gi/overrides/GLib.py     |  4 ---
+ gi/overrides/GObject.py  |  3 ++
+ gi/pygi-boxed.c          | 54 +++++++++++++++++++++++++-------
+ gi/pygi-boxed.h          |  4 +--
+ gi/pygi-source.c         |  6 ++--
+ gi/pygi-struct-marshal.c | 81
+ +++++++++++++++++++++++++++++++++++++++++++++---
+ tests/test_gi.py         |  1 -
+ tests/test_source.py     |  8 +++--
+ 9 files changed, 140 insertions(+), 27 deletions(-)
+
+commit 62aed0977090f7099a5e538209f7c680ea22fe12
+Author: Simon Feltman <sfeltman@src.gnome.org>
+Date:   Sun Aug 17 19:04:51 2014 -0700
+
+    Replace GObject.signal_query with introspected version
+
+    Remove the static bindings for GObject.signal_query and replace with a
+    Python compatibility shim which utilizes the introspection exposed
+    version
+    of the function.
+
+    https://bugzilla.gnome.org/show_bug.cgi?id=688792
+
+ gi/gobjectmodule.c      | 89
+ -------------------------------------------------
+ gi/overrides/GObject.py | 39 ++++++++++++----------
+ 2 files changed, 21 insertions(+), 107 deletions(-)
+
+commit 4e130d72a5492fc00c61a816eddccdbc4f558b91
+Author: Simon Feltman <sfeltman@src.gnome.org>
+Date:   Sun Aug 17 19:03:32 2014 -0700
+
+    Use array lengths specified on struct fields
+
+    Add array length marshalling policy for struct fields. This fixes
+    accessing
+    C array fields on structs which also specify a length field.
+
+    https://bugzilla.gnome.org/show_bug.cgi?id=688792
+
+ gi/pygi-argument.c | 14 ++++++-------
+ gi/pygi-argument.h |  4 ++++
+ gi/pygi-info.c     | 59
+ ++++++++++++++++++++++++++++++++++++++++++++++++++++--
+ 3 files changed, 68 insertions(+), 9 deletions(-)
+
+commit c55d029d2d67b5920e9467212e22b0ad58d3ded8
+Author: Simon Feltman <sfeltman@src.gnome.org>
+Date:   Sun Aug 17 18:15:23 2014 -0700
+
+    Refactor signal array length marshalling to support a length policy
+
+    Replace passing arrays of data to non-caching array marshallers with
+    a policy
+    closure that can be customized depending on context. In the case
+    of signals,
+    this is mostly scaffolding which will be replaced with caching
+    marshallers.
+    However, it opens the legacy marshaller for usage with struct
+    and object
+    array fields.
+
+    https://bugzilla.gnome.org/show_bug.cgi?id=688792
+
+ gi/pygi-argument.c       | 70
+ ++++++++++++++++++++++++++++++++----------------
+ gi/pygi-argument.h       | 14 +++++++---
+ gi/pygi-signal-closure.c |  8 ++++--
+ 3 files changed, 64 insertions(+), 28 deletions(-)
+
+commit 3270dad356c44f5fef7571a9f29b22e7c293fa2c
+Author: Simon Feltman <sfeltman@src.gnome.org>
+Date:   Sun Aug 17 13:58:10 2014 -0700
+
+    Remove dead code for marshalling array lengths in the context
+    of vfuncs
+
+    Remove usage of the args parameter from _pygi_argument_to_array. This
+    is no
+    longer used because array marshalling for vfuncs is now handled by
+    the cached
+    marshaller.
+
+    https://bugzilla.gnome.org/show_bug.cgi?id=688792
+
+ gi/pygi-argument.c | 24 +++++++++---------------
+ 1 file changed, 9 insertions(+), 15 deletions(-)
+
+commit 6046ca87697fe80c6c0eb70f1efcad24de4f4fd8
+Author: Simon Feltman <sfeltman@src.gnome.org>
+Date:   Sun Aug 17 21:53:55 2014 -0700
+
+    Fix memory leak with unboxed caller allocated structs
+
+    Take caller-allocates into account when wrapping unboxed structures.
+    This will free the allocated memory when the Python object is
+    de-alloced.
+
+ gi/pygi-struct-marshal.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+commit c607f07f5ae3ca62ee3a2649f84330eaaa8801c6
+Author: Simon Feltman <sfeltman@src.gnome.org>
+Date:   Sat Aug 16 22:34:29 2014 -0700
+
+    tests: Add reference count test for signal connection arguments
+
+    Add tests for ensuring reference counts are what we expect for
+    connect() callback, user_data, and swap object (currently broken
+    due to bug 688064).
+
+    https://bugzilla.gnome.org/show_bug.cgi?id=727004
+
+ tests/test_signal.py | 133
+ +++++++++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 133 insertions(+)
+
+commit 7076669aadfc5227144df87277d69ae66865770a
+Author: Tobias Mueller <gnome-bugs@muelli.cryptobitch.de>
+Date:   Sat Aug 16 17:46:50 2014 -0700
+
+    Don't mask GObject sub-class doc strings in meta-class
+
+    If a class has a __doc__ attribute explicitly set, always return it.
+    Only generate doc strings for classes coming from  gi.repository
+    or gi.overrides.
+
+    Co-Authored-By: Simon Feltman <sfeltman@src.gnome.org>
+
+    https://bugzilla.gnome.org/show_bug.cgi?id=731452
+
+    https://bugzilla.gnome.org/show_bug.cgi?id=734926
+
+ gi/types.py             | 12 +++++++++++-
+ tests/test_docstring.py |  2 --
+ 2 files changed, 11 insertions(+), 3 deletions(-)
+
+commit 4cdca4328da7442be247e775294fc676cf677bb7
+Author: Piotr Iwaniuk <piwaniuk@poczta.onet.pl>
+Date:   Sat Aug 16 15:06:40 2014 -0700
+
+    tests: Add failing tests for GObject sub-class doc-strings
+
+    Add tests for sub-class docstrings set with either doc-string
+    syntax and by setting the __doc__ attribute directly.
+
+    Co-Authored-By: Simon Feltman <sfeltman@src.gnome.org>
+
+    https://bugzilla.gnome.org/show_bug.cgi?id=731452
+
+ tests/test_docstring.py | 39 +++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 39 insertions(+)
+
+commit 9328a6721909322f0e1444e5285ae1b7b5bf1e3c
+Author: Simon Feltman <sfeltman@src.gnome.org>
+Date:   Thu Aug 14 22:47:14 2014 -0700
+
+    configure.ac: post release version bump to 3.13.5
+
+ configure.ac | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+commit 49fd1662623f6dbb6af16b9fbfc0fb57707a7eee
+Author: Simon Feltman <sfeltman@src.gnome.org>
+Date:   Thu Aug 14 22:42:27 2014 -0700
+
+    release 3.13.4
+
+ NEWS | 22 ++++++++++++++++++++++
+ 1 file changed, 22 insertions(+)
+
+commit 0d2e797812ab4e1a745ef97559104691dbb6b824
+Author: Simon Feltman <sfeltman@src.gnome.org>
+Date:   Thu Aug 14 18:33:06 2014 -0700
+
+    Fix invalid unref after getting callable container
+
+    Don't unref the results of g_base_info_get_container() because it is
+    transfer-none. This was causing an attempted unref on an invalid
+    object
+    when setting up callback caches for signals.
+
+    https://bugzilla.gnome.org/show_bug.cgi?id=727004
+
+ gi/pygi-cache.c | 2 --
+ 1 file changed, 2 deletions(-)
+
+commit 654c28faffc8d956bd31987adca092fa014cc897
+Author: Simon Feltman <sfeltman@src.gnome.org>
+Date:   Thu Aug 14 21:31:33 2014 -0700
+
+    tests: Silence valgrindlog and valgrindxml output from forked procs
+
+    This is needed to properly diff valgrind runs between commits.
+
+ tests/Makefile.am | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+commit 57070585a5d5dbc5f42d6fa6d2c309b36f38dfdc
+Author: Simon Feltman <sfeltman@src.gnome.org>
+Date:   Wed Aug 13 10:27:01 2014 -0700
+
+    Remove ffi wrapped destroy notify used for closure cleanup
+
+    Remove global ffi wrapper for _pygi_invoke_closure_free() and
+    instead use
+    a pointer to _pygi_invoke_closure_free() directly. There is no need
+    to wrap
+    a known single use function with an ffi closure. Originally
+    introduced in
+    commit 610dd1eec87f.
+
+ gi/pygi-closure.c | 49 +------------------------------------------------
+ 1 file changed, 1 insertion(+), 48 deletions(-)
+
+commit 3f9b5f890ad1292f12eba1e545084de80b76dab7
+Author: Simon Feltman <sfeltman@src.gnome.org>
+Date:   Tue Aug 12 22:19:24 2014 -0700
+
+    tests: Update tests for static binding protection to check
+    AttributeErrors
+
+ tests/test_import_machinery.py | 10 +++++-----
+ 1 file changed, 5 insertions(+), 5 deletions(-)
+
+commit e674340db90c29c556b45e0a8f8b2da72661b738
+Author: Simon Feltman <sfeltman@src.gnome.org>
+Date:   Mon Aug 11 23:12:38 2014 -0700
+
+    Use AttributeError for static binding protection
+
+    Replace usage of RuntimeError with AttributeError in the dummy module
+    protecting importing of static bindings. This is needed so we
+    don't break
+    modules like inspect which is used by ipython.
+
+ gi/__init__.py | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+commit 86fb12b3e9b7558000d100f8f212e970ae8c4fd2
+Author: Simon Feltman <sfeltman@src.gnome.org>
+Date:   Mon Aug 11 22:47:14 2014 -0700
+
+    Add deprecation warning for connect_object() with non-GObject argument
+
+    GObject.connect_object() accepts any Python object and holds a strong
+    reference to it in the closure defeating the purpose of
+    connect_object().
+    Add a warning so we can eventually limit connect_object() to GObject
+    arguments
+    use the underlying g_signal_connect_object() which holds a weak
+    reference.
+
+    https://bugzilla.gnome.org/show_bug.cgi?id=688064
+
+ gi/pygobject.c | 9 +++++++++
+ 1 file changed, 9 insertions(+)
+
+commit 9c54bb9defb681316841158cc63df0b0b85c12f0
+Author: Simon Feltman <sfeltman@src.gnome.org>
+Date:   Mon Aug 11 22:39:13 2014 -0700
+
+    tests: Add tests for connect_object()
+
+    Add tests for both introspected and non-introspected signals
+    making use
+    of connect_object() and connect_object_after() in combination
+    with GObject
+    and Python object swap data.
+
+    https://bugzilla.gnome.org/show_bug.cgi?id=727004
+
+ tests/test_signal.py | 139
+ +++++++++++++++++++++++++++++++++++++++++++--------
+ 1 file changed, 117 insertions(+), 22 deletions(-)
+
+commit 581acc4c56be127b3a724df504bb46a40959fdd9
+Author: Simon Feltman <sfeltman@src.gnome.org>
+Date:   Mon Aug 11 21:21:42 2014 -0700
+
+    Add Python implementation of Object.connect_data()
+
+    Add GObject.Object.connect_data() which takes an optional
+    "connect_flags"
+    keyword argument accepting GObject.ConnectFlags enum values. This is
+    for supporting user data swapping (ConnectFlags.SWAPPED).
+
+    https://bugzilla.gnome.org/show_bug.cgi?id=701843
+
+ gi/overrides/GObject.py |  37 ++++++++++++++++
+ tests/test_signal.py    | 109
+ ++++++++++++++++++++++++++++++++++++++++++++++++
+ 2 files changed, 146 insertions(+)
+
+commit b1caef95c4b68b65f3f159563162afde5a0b0939
+Author: Simon Feltman <sfeltman@src.gnome.org>
+Date:   Sat Aug 9 02:14:23 2014 -0700
+
+    tests: Add failing tests which verify exceptions raised in property
+    getters
+
+    https://bugzilla.gnome.org/show_bug.cgi?id=575652
+
+ tests/test_properties.py | 17 +++++++++++++++++
+ 1 file changed, 17 insertions(+)
+
+commit 19cdbee5a89009da0eb366b9c698a860a7aa92b8
+Author: Garrett Regier <Garrett.Regier@riftio.com>
+Date:   Fri Aug 8 10:08:23 2014 -0400
+
+    Cleanup input args when marshaling in closures
+
+    The cleanup must happen before setting the out args otherwise
+    the args that cleanup would free are the just set args, not the
+    original ones.
+
+    https://bugzilla.gnome.org/show_bug.cgi?id=727004
+
+ gi/pygi-closure.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+commit 7742fab42de5b1f4f8161237fc3cef91fd98791c
+Author: Simon Feltman <sfeltman@src.gnome.org>
+Date:   Fri Aug 8 02:47:11 2014 -0700
+
+    tests: Fix Python 2 build for newly added test_array_parm()
+
+    Use @unittest.skip() with a string argument as required by Python 2.
+
+ tests/test_signal.py | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+commit 3165c17a455652de9a61439428fa40f30120dc6a
+Author: Simon Feltman <sfeltman@src.gnome.org>
+Date:   Fri Aug 8 02:46:26 2014 -0700
+
+    Remove incorrect and unused casts from tp_free calls
+
+    Arguments to Py_TYPE() do not need to be cast since the macro
+    always casts
+    to a PyObject* internall.
+
+ gi/pygi-boxed.c     | 2 +-
+ gi/pygi-ccallback.c | 2 +-
+ gi/pygi-info.c      | 2 +-
+ gi/pygi-struct.c    | 2 +-
+ 4 files changed, 4 insertions(+), 4 deletions(-)
+
+commit 74dfec27c6008968cc66a13792dfb02b29c231b6
+Author: Simon Feltman <sfeltman@src.gnome.org>
+Date:   Fri Aug 8 02:33:51 2014 -0700
+
+    Fix GCallback Python wrapper leak
+
+    The PyObject wrapper for GCallbacks was not calling tp_free in
+    the custom
+    tp_dealloc class method.
+
+    https://bugzilla.gnome.org/show_bug.cgi?id=695130
+
+ gi/pygi-ccallback.c | 2 ++
+ 1 file changed, 2 insertions(+)
+
+commit dcf9111a86e01d66943909a0c9f21a181ccc38a6
+Author: Martin Pitt <martinpitt@gnome.org>
+Date:   Fri Aug 8 01:55:21 2014 -0700
+
+    tests: Add failing test for marshalling an array of GValues through
+    signals
+
+    https://bugzilla.gnome.org/show_bug.cgi?id=669496
+
+ tests/test_signal.py | 12 ++++++++++++
+ 1 file changed, 12 insertions(+)
+
+commit d689d24f271c30612c6a86b5c51d50a1179aedad
+Author: Simon Feltman <sfeltman@src.gnome.org>
+Date:   Thu Aug 7 17:52:35 2014 -0700
+
+    tests: Add tests for GApplication local command line handling
+
+    Add various tests which override Gio.Appliction.do_command_line and
+    do_local_command_line.
+
+    https://bugzilla.gnome.org/show_bug.cgi?id=690851
+
+ tests/test_gio.py | 65
+ +++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 65 insertions(+)
+
+commit 59c257ebc47fa725750344dd50dd8eb522536d3c
+Author: Garrett Regier <Garrett.Regier@riftio.com>
+Date:   Thu Aug 7 12:25:59 2014 -0400
+
+    Add test for a callback with an inout array
+
+    This was broken until the closures used the caches for marshaling.
+
+    https://bugzilla.gnome.org/show_bug.cgi?id=702508
+
+ tests/test_everything.py | 19 +++++++++++++++++++
+ 1 file changed, 19 insertions(+)
+
+commit 9d0c43b2b9f92fff4249e4eb296f00ea73b15af3
+Author: Garrett Regier <Garrett.Regier@riftio.com>
+Date:   Thu Aug 7 12:06:30 2014 -0400
+
+    Fix raising an error in a constructor
+
+    It should raise a Python exception instead of warnings about
+    a constructor returning NULL.
+
+    https://bugzilla.gnome.org/show_bug.cgi?id=727004
+
+ gi/pygi-cache.c  | 6 +++---
+ tests/test_gi.py | 6 ++++++
+ 2 files changed, 9 insertions(+), 3 deletions(-)
+
+commit d7b9ef0f5411ebcbb2597c16b221fd3482c535e4
+Author: Garrett Regier <Garrett.Regier@riftio.com>
+Date:   Wed Aug 6 15:30:58 2014 -0400
+
+    Use the caches for marshaling the arguments in closures
+
+    Changes to object marshaling when the calling context is from
+    C was required to correctly keep the correct floating status.
+
+    The array cache has been modified to set to/from_py_marshaller
+    for the length arg cache. This is required for closures which include
+    the length arg for backwards compatibility. The closure cache takes
+    care to change the length arg cache's meta type so it gets marshalled
+    for closures.
+
+    https://bugzilla.gnome.org/show_bug.cgi?id=727004
+
+ gi/pygi-array.c     |   5 +-
+ gi/pygi-basictype.c |   4 +-
+ gi/pygi-basictype.h |  36 +++--
+ gi/pygi-cache.c     |  30 +++-
+ gi/pygi-closure.c   | 403
+ ++++++++++++++++++++++++++++------------------------
+ gi/pygi-invoke.c    |   3 +-
+ 6 files changed, 271 insertions(+), 210 deletions(-)
+
+commit 9337acf98d783777c94d4bcb912a185ba6791efb
+Author: Garrett Regier <Garrett.Regier@riftio.com>
+Date:   Wed Aug 6 12:14:27 2014 -0400
+
+    Specialize GObject marshaling when called from C
+
+    These are needed otherwise the floating status of
+    the GObject will not be kept.
+
+    https://bugzilla.gnome.org/show_bug.cgi?id=727004
+
+ gi/pygi-object.c | 86
+ +++++++++++++++++++++++++++++++++++++++++++++++---------
+ 1 file changed, 72 insertions(+), 14 deletions(-)
+
+commit cf295f636b6324a46abbaf329cd6d92c04155d9d
+Author: Garrett Regier <Garrett.Regier@riftio.com>
+Date:   Wed Aug 6 11:59:09 2014 -0400
+
+    Move special handling of GObject from Python when calling from C
+
+    This will soon be used in the GObject arg cache marshaling when
+    the calling context is C.
+
+    https://bugzilla.gnome.org/show_bug.cgi?id=727004
+
+ gi/pygi-argument.c | 21 +--------------------
+ gi/pygi-object.c   | 30 ++++++++++++++++++++++++++++++
+ gi/pygi-object.h   |  5 +++++
+ 3 files changed, 36 insertions(+), 20 deletions(-)
+
+commit 0d09234ea0399d756ee3fb0d358fab5b0a145657
+Author: Garrett Regier <Garrett.Regier@riftio.com>
+Date:   Wed Aug 6 11:53:39 2014 -0400
+
+    Always pass along the callable cache to the arg cache constructors
+
+    This will be needed in a future patch which requires that the callable
+    cache is always available.
+
+    https://bugzilla.gnome.org/show_bug.cgi?id=727004
+
+ gi/pygi-array.c     | 20 ++++++++++++--------
+ gi/pygi-array.h     |  9 +++++----
+ gi/pygi-cache.c     | 34 ++++++++++++++++++++--------------
+ gi/pygi-cache.h     |  7 ++++---
+ gi/pygi-hashtable.c | 31 +++++++++++++++++--------------
+ gi/pygi-hashtable.h |  9 +++++----
+ gi/pygi-list.c      | 30 +++++++++++++++++++-----------
+ gi/pygi-list.h      |  9 +++++----
+ gi/pygi-object.c    | 25 ++++++++++++++-----------
+ gi/pygi-object.h    |  3 ++-
+ 10 files changed, 103 insertions(+), 74 deletions(-)
+
+commit 203fef99205ce0c46b1530b0d480021ee8b8e325
+Author: Garrett Regier <Garrett.Regier@riftio.com>
+Date:   Tue Aug 5 10:42:46 2014 -0400
+
+    Set the correct meta type for GErrors when marshaling to Python
+
+    Otherwise we do not pass the GError into python callbacks and
+    we also want to convert these into Python Exceptions.
+
+    https://bugzilla.gnome.org/show_bug.cgi?id=727004
+
+ gi/pygi-error.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+commit 2e92809258d04e91c9d22f2fc0de09db2e60c962
+Author: Garrett Regier <Garrett.Regier@riftio.com>
+Date:   Tue Aug 5 10:37:58 2014 -0400
+
+    Pass the GIArgument to the closure assign functions
+
+    This will be required once we use the caches for marshaling.
+
+    https://bugzilla.gnome.org/show_bug.cgi?id=727004
+
+ gi/pygi-closure.c | 102
+ ++++++++++++++++++++++++++----------------------------
+ 1 file changed, 50 insertions(+), 52 deletions(-)
+
+commit ca3579db14df278923674c294d07481a7255510f
+Author: Garrett Regier <Garrett.Regier@riftio.com>
+Date:   Tue Aug 5 10:25:40 2014 -0400
+
+    Use the caches for closures, but not yet for marshaling the arguments
+
+    Instead of using the various GI functions we use the data from
+    the caches.
+    This also fixes generating an arg cache for a closure as it was
+    missing some
+    data or simply setting incorrect data. Also, always included the
+    GITypeInfo
+    until the closures no longer need it for marshaling the arguments.
+
+    https://bugzilla.gnome.org/show_bug.cgi?id=727004
+
+ gi/pygi-cache.c   |  33 +++++++-
+ gi/pygi-cache.h   |   4 +
+ gi/pygi-closure.c | 245
+ +++++++++++++++++++++++++-----------------------------
+ gi/pygi-closure.h |   2 +
+ 4 files changed, 150 insertions(+), 134 deletions(-)
+
+commit 6a21dab89b59db0afc6d6a22272028ee949b52ad
+Author: Garrett Regier <Garrett.Regier@riftio.com>
+Date:   Tue Aug 5 10:16:45 2014 -0400
+
+    Correctly set the destroy notify for callbacks in closures
+
+    https://bugzilla.gnome.org/show_bug.cgi?id=727004
+
+ gi/pygi-closure.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+commit e6d48b4eadbeb1014c4eb140317b579e69eb8d88
+Author: Garrett Regier <Garrett.Regier@riftio.com>
+Date:   Fri Aug 1 11:40:08 2014 -0400
+
+    Split the callable cache into the different types
+
+    Instead of doing different things based on the various function types
+    this adds vfuncs for generate_args_cache() and invoke() which are then
+    specialized for the various function types. Also add a calling context
+    to the callable cache which is then used to determine the direction
+    when generating the arg caches.
+
+    This is in preparation for adding closure caches.
+
+    https://bugzilla.gnome.org/show_bug.cgi?id=727004
+
+ gi/pygi-cache.c               | 514
+ +++++++++++++++++++++++++++++++-----------
+ gi/pygi-cache.h               |  96 +++++---
+ gi/pygi-ccallback.c           |  16 +-
+ gi/pygi-info.c                |   3 +-
+ gi/pygi-invoke-state-struct.h |   2 -
+ gi/pygi-invoke.c              | 244 ++++++++------------
+ gi/pygi-invoke.h              |   4 +
+ gi/pygi.h                     |   2 +-
+ 8 files changed, 564 insertions(+), 317 deletions(-)
+
+commit 18341f27a5a9770d8caf3192a75737ab2bc06b1e
+Author: Ignacio Casal Quinteiro <icq@gnome.org>
+Date:   Wed Aug 6 08:27:43 2014 +0200
+
+    Generate .dll libraries on windows
+
+    https://bugzilla.gnome.org/show_bug.cgi?id=734288
+
+ configure.ac      | 8 ++++++++
+ tests/Makefile.am | 8 ++++----
+ 2 files changed, 12 insertions(+), 4 deletions(-)
+
+commit d70403357d6b510356dd375304fb97e458fd12b2
+Author: Simon Feltman <sfeltman@src.gnome.org>
+Date:   Tue Aug 5 22:45:46 2014 -0700
+
+    Add protection against attempts at importing static bindings
+
+    Clobber gobject, gio, glib, gtk, and gtk.gdk in sys.modules upon
+    importing
+    gi with dummy modules which produce an error upon access.
+
+    https://bugzilla.gnome.org/show_bug.cgi?id=709183
+
+ gi/__init__.py                 | 25 ++++++++++++++++++++++---
+ tests/test_import_machinery.py | 24 ++++++++++++++++++++++++
+ 2 files changed, 46 insertions(+), 3 deletions(-)
+
+commit 5ca4d25eac0efcc12b02fe53f379ee41e69bf1d2
+Author: Simon Feltman <sfeltman@src.gnome.org>
+Date:   Tue Dec 31 16:15:04 2013 -0800
+
+    Update and deprecate gi.overrides.keysyms
+
+    Replace manually assigned keysyms with a dynamically generated version
+    pulling names and values from Gdk via GI. Add a runtime warning when
+    this module is imported.
+
+    https://bugzilla.gnome.org/show_bug.cgi?id=721295
+
+ gi/overrides/keysyms.py    | 1490
+ +-------------------------------------------
+ pygtkcompat/pygtkcompat.py |   14 +-
+ 2 files changed, 27 insertions(+), 1477 deletions(-)
+
+commit 9eaeba9079c23d7e2837f62e8ed2b26c018351b6
+Author: Alexey Pavlov <alexpux@gmail.com>
+Date:   Tue Aug 5 19:03:38 2014 -0700
+
+    Use -no-undefined for building on Windows
+
+    See LT_INIT([win32-dll]):
+    http://www.gnu.org/software/libtool/manual/html_node/LT_005fINIT.html
+
+    Additionally add PYTHON_LIBS to testhelper.la linking.
+
+    https://bugzilla.gnome.org/show_bug.cgi?id=734284
+
+ tests/Makefile.am | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+commit 5737a9ec4bf4d9d07a7e3994d91abf9077b342cc
+Author: Alexey Pavlov <alexpux@gmail.com>
+Date:   Tue Aug 5 18:40:53 2014 -0700
+
+    Use python-config for libs when available
+
+    https://bugzilla.gnome.org/show_bug.cgi?id=734289
+
+ m4/python.m4 | 7 ++++++-
+ 1 file changed, 6 insertions(+), 1 deletion(-)
+
+commit 093abb4ed052c768f51c90324c2e40063aa6b9b9
+Author: Alexey Pavlov <alexpux@gmail.com>
+Date:   Tue Aug 5 18:20:25 2014 -0700
+
+    Link gi.so with FFI_LIBS
+
+    https://bugzilla.gnome.org/show_bug.cgi?id=734286
+
+ gi/Makefile.am | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+commit 9df54d23a15b871fd71c994b97ffe847ff3b9eb5
+Author: Alexey Pavlov <alexpux@gmail.com>
+Date:   Tue Aug 5 15:45:04 2014 +0200
+
+    Include math headers also on mingw
+
+    https://bugzilla.gnome.org/show_bug.cgi?id=734287
+
+ gi/pygi-basictype.c | 2 --
+ 1 file changed, 2 deletions(-)
+
+commit 964ced98e03c704074d10cc362abfa14c00457ba
+Author: Garrett Regier <Garrett.Regier@riftio.com>
+Date:   Thu Jul 31 10:16:47 2014 -0400
+
+    Added args_offset to the cache instead of checking the function type
+
+ gi/pygi-array.c   | 6 ++----
+ gi/pygi-cache.c   | 6 +++---
+ gi/pygi-cache.h   | 3 +++
+ gi/pygi-closure.c | 4 +---
+ 4 files changed, 9 insertions(+), 10 deletions(-)
+
+commit 9943d876059201cbee87f072a84234ed774ed932
+Author: Simon Feltman <sfeltman@src.gnome.org>
+Date:   Thu Jul 31 21:51:00 2014 -0700
+
+    doap: Update homepage URL and email address
+
+ pygobject.doap | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+commit afef1020a43d91014c34ffcd5a5f66281f2e7cc9
+Author: Simon Feltman <sfeltman@src.gnome.org>
+Date:   Thu Jul 31 21:46:37 2014 -0700
+
+    Change maintainer in PKG-INFO to self
+
+ PKG-INFO.in | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+commit 10c4d66574e35cc84bed3c3057b68ad98613d839
+Author: Andre Klapper <a9016009@gmx.de>
+Date:   Thu Jul 31 21:28:12 2014 +0200
+
+    doap: add <programming-language>
+
+ pygobject.doap | 2 ++
+ 1 file changed, 2 insertions(+)
+
+commit f30001f2b01896577a2b4d956bc4658350e56b8d
+Author: Simon Feltman <sfeltman@src.gnome.org>
+Date:   Wed Jul 30 00:29:01 2014 -0700
+
+    Add GClosure marshalling cleanup
+
+    Add marshalling cleanup for Python callables and boxed GClosures
+    passed as arguments. Make sure the marshaller owns a reference
+    until clean. Fix transfer everything case by adding a new reference.
+    Remove unused header declaration: pygi_arg_gclosure_from_py_marshal
+
+    https://bugzilla.gnome.org/show_bug.cgi?id=695128
+
+ gi/pygi-struct-marshal.c | 46
+ ++++++++++++++++++++++++++++++++++++++--------
+ gi/pygi-struct-marshal.h |  4 ----
+ 2 files changed, 38 insertions(+), 12 deletions(-)
+
+commit cf4e830f1b613736ef9586562eb6c0b354165925
+Author: Simon Feltman <sfeltman@src.gnome.org>
+Date:   Wed Jul 30 12:42:15 2014 -0700
+
+    Remove decrementing argument index for failed marshalling cleanup
+
+    Remove index decrement when cleanup function is called for failed
+    argument
+    marshalling. The decrement is incorrect and causes the failed argument
+    cleanup to be skipped. The decrement also causes cleanup for arguments
+    prior to the failed argument to receive "was_successful" as FALSE,
+    which
+    is also incorrect.
+
+    https://bugzilla.gnome.org/show_bug.cgi?id=695128
+
+ gi/pygi-invoke.c | 10 +++++-----
+ 1 file changed, 5 insertions(+), 5 deletions(-)
+
+commit 662a4421125d126a11ca163c362d205f0c2147c4
+Author: Simon Feltman <sfeltman@src.gnome.org>
+Date:   Wed Jul 30 12:46:18 2014 -0700
+
+    Use cleanup data for argument marshalling failures
+
+    Use state->args_cleanup_data when cleaning up failed argument
+    marshalling.
+    This was overlooked when cleanup data tracking was implemented
+    (commit 7407367f).
+
+    https://bugzilla.gnome.org/show_bug.cgi?id=695128
+
+ gi/pygi-marshal-cleanup.c | 14 +++++++-------
+ 1 file changed, 7 insertions(+), 7 deletions(-)
+
+commit 39746a3b4f307974d8b3f98f7ba2aefe06d897a3
+Author: Olav Vitters <olav@vitters.nl>
+Date:   Wed Jul 30 20:41:37 2014 +0200
+
+    doap category core
+
+ pygobject.doap | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+commit 36caa74a276972eee2b18162ac09edc83c30a3cb
+Author: Simon Feltman <sfeltman@src.gnome.org>
+Date:   Mon Jul 28 23:51:19 2014 -0700
+
+    tests: Move object property reference count tests to test_properties
+
+    Move and consolidate tests for object property reference counts from
+    tests_object_marshaling to test_properties.
+
+    https://bugzilla.gnome.org/show_bug.cgi?id=726999
+
+ tests/test_object_marshaling.py | 68
+ -----------------------------------------
+ tests/test_properties.py        | 36 ++++++++++++++++++++++
+ 2 files changed, 36 insertions(+), 68 deletions(-)
+
+commit 15b795354ca5a8f436779ee5d81936af8961acb5
+Author: Simon Feltman <sfeltman@src.gnome.org>
+Date:   Mon Jul 28 22:20:44 2014 -0700
+
+    tests: Move test_everything.TestProperties into test_properties
+
+    Consolidate property tests found in test_everything into test_property
+    removing redundant tests already found in test_property.
+
+    https://bugzilla.gnome.org/show_bug.cgi?id=726999
+
+ tests/test_everything.py | 69
+ +-----------------------------------------------
+ tests/test_properties.py | 59 +++++++++++++++++++++++++++++++++++++++++
+ 2 files changed, 60 insertions(+), 68 deletions(-)
+
+commit c691d86c6f5f073f7c1e1e6ddd4311ed27431747
+Author: Simon Feltman <sfeltman@src.gnome.org>
+Date:   Mon Jul 28 21:32:44 2014 -0700
+
+    tests: Add tests for get/set_property()
+
+    Re-use the new CPropertiesTestBase class for testing
+    get/set_property()
+    methods.
+
+    https://bugzilla.gnome.org/show_bug.cgi?id=726999
+
+ tests/test_properties.py | 32 ++++++++++++++++++++++++++++++++
+ 1 file changed, 32 insertions(+)
+
+commit 115bc88ad5eb85e0a1821fa4fa2cad5c6df87dcc
+Author: Simon Feltman <sfeltman@src.gnome.org>
+Date:   Mon Jul 28 21:32:00 2014 -0700
+
+    tests: Break TestPropertiesObject up for re-use
+
+    Refactor TestPropertiesObject into a base class which abstracts
+    get/set
+    property methods. This will allow re-use for testing both
+    get/set_property()
+    and the props accessor.
+
+    https://bugzilla.gnome.org/show_bug.cgi?id=726999
+
+ tests/test_properties.py | 221
+ +++++++++++++++++++++++++----------------------
+ 1 file changed, 118 insertions(+), 103 deletions(-)
+
+commit bf0a5c3345e65b6a7475fada4ea240dbe0049a26
+Author: Simon Feltman <sfeltman@src.gnome.org>
+Date:   Mon Jul 28 19:32:00 2014 -0700
+
+    tests: Move test_gi.TestPropertiesObject into test_properties
+
+    Move all property testing code into the test_properties module.
+
+    https://bugzilla.gnome.org/show_bug.cgi?id=726999
+
+ tests/test_gi.py         | 233
+ ----------------------------------------------
+ tests/test_properties.py | 235
+ +++++++++++++++++++++++++++++++++++++++++++++++
+ 2 files changed, 235 insertions(+), 233 deletions(-)
+
+commit 4941691264970b19b81d435cd58ab18ef6bac9a5
+Author: Simon Feltman <sfeltman@src.gnome.org>
+Date:   Fri Jul 25 18:33:15 2014 -0700
+
+    pyflakes: Fix legacy print and exception usage under Python 3
+
+    Fix print statements and legacy exception usage in examples.
+
+    https://bugzilla.gnome.org/show_bug.cgi?id=731042
+
+ examples/properties.py    | 12 ++++++------
+ tests/runtests-windows.py |  4 ++--
+ 2 files changed, 8 insertions(+), 8 deletions(-)
+
+commit c3d3cd2f798cbae7f66d8e57e191b5f9569a713b
+Author: Simon Feltman <sfeltman@src.gnome.org>
+Date:   Fri Jul 25 17:49:57 2014 -0700
+
+    tests: Ignore warnings for GtkAlignment
+
+    This was causing unittests to bail. Even though this is deprecated,
+    we still need to test its usage in the context of pygtkcompat.
+
+ tests/compat_test_pygtk.py | 15 ++++++++++++++-
+ 1 file changed, 14 insertions(+), 1 deletion(-)
+
+commit 804b89447ae2748c88ad5efe5e6e37d949681b9e
+Author: Simon Feltman <sfeltman@src.gnome.org>
+Date:   Fri Jul 25 17:40:36 2014 -0700
+
+    tests: Remove usage of deprecated "schema" property in GSettings
+    creation
+
+    Use new and new_with_path instead as the schema property was causing a
+    hard warning which fails the test suite.
+
+ tests/test_gio.py | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+commit 6b806137825891cc6bdad82a68cf3deb087feb70
+Author: Simon Feltman <sfeltman@src.gnome.org>
+Date:   Fri Jul 25 17:35:06 2014 -0700
+
+    tests: Ignore stock-id usage warnings
+
+    Add ignore_glib_warnings context manager for easily ignoring warnings
+    caused by stock-id usage. Even though stock-id is deprecated, we still
+    need to test the related Python binding overrides.
+
+ tests/test_overrides_gtk.py | 40 ++++++++++++++++++++++++----------------
+ 1 file changed, 24 insertions(+), 16 deletions(-)
+
+commit 6b944c4e215a34bc4181c7c708b6d6f2d4898c15
+Author: Simon Feltman <sfeltman@src.gnome.org>
+Date:   Mon Jun 23 15:55:57 2014 -0700
+
+    configure.ac: post release version bump to 3.13.4
+
+ configure.ac | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+commit 58198b6ae426448cde82cad7304018c7c770c0ea
+Author: Simon Feltman <sfeltman@src.gnome.org>
+Date:   Mon Jun 23 15:53:03 2014 -0700
+
+    release 3.13.3
+
+ NEWS | 8 ++++++++
+ 1 file changed, 8 insertions(+)
+
+commit cdf8c40768b00d08a1facca696a042efc6e8988f
+Author: Simon Feltman <sfeltman@src.gnome.org>
+Date:   Thu May 29 13:02:44 2014 -0700
+
+    demos: Cleanup CSS accordion demo to use a loop for adding buttons
+
+    Also use Gtk.main_quit directly since it has been overridden to accept
+    extra args.
+
+ demos/gtk-demo/demos/Css/css_accordion.py | 21 +++------------------
+ 1 file changed, 3 insertions(+), 18 deletions(-)
+
+commit ba8380d093d6f84eabcf18c02b248aae8ffc3cf5
+Author: Simon Feltman <sfeltman@src.gnome.org>
+Date:   Tue May 27 19:24:20 2014 -0700
+
+    refactor: Move builder connection utilities outside of Builder class
+
+    Move _extract_handler_and_args and _builder_connect_callback into
+    module
+    scope for re-use by GTK+ Composite Templates.
+
+    https://bugzilla.gnome.org/show_bug.cgi?id=701843
+
+ gi/overrides/Gtk.py         | 83
+ ++++++++++++++++++++++++---------------------
+ tests/test_overrides_gtk.py |  8 ++---
+ 2 files changed, 48 insertions(+), 43 deletions(-)
+
+commit f127fabe9664b243774b76a68e6fce5986aa23a0
+Author: Simon Feltman <sfeltman@src.gnome.org>
+Date:   Tue May 27 15:52:10 2014 -0700
+
+    tests: Move TestSignals from test_everything into test_signal
+
+    Move these tests into a more meaningful location.
+
+    https://bugzilla.gnome.org/show_bug.cgi?id=701843
+
+ tests/test_everything.py | 123
+ --------------------------------------------
+ tests/test_signal.py     | 131
+ +++++++++++++++++++++++++++++++++++++++++++++++
+ 2 files changed, 131 insertions(+), 123 deletions(-)
+
+commit da46963a0ce9f796ff4ee4ae2023adfd40ed54ca
+Author: Simon Feltman <sfeltman@src.gnome.org>
+Date:   Mon May 26 04:21:07 2014 -0700
+
+    configure.ac: post release version bump to 3.13.2
+
+ configure.ac | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+commit 6258adf6c7c604954f0dbc1a9ed8c284114358bc
+Author: Simon Feltman <sfeltman@src.gnome.org>
+Date:   Mon May 26 04:18:55 2014 -0700
+
+    release 3.13.2
+
+ NEWS | 21 +++++++++++++++++++++
+ 1 file changed, 21 insertions(+)
+
+commit 32542a4ba24d413fb6e0d509bff05f4ac3f642a1
+Author: Simon Feltman <sfeltman@src.gnome.org>
+Date:   Mon May 26 03:01:13 2014 -0700
+
+    Python 3.4 make check fixes
+
+    Bump GI required version to 1.39.0. This is needed to get rid of
+    expectedFailures which pass when built with 1.39.0 (unexpected
+    successes
+    fail unittesting in Python 3.4).
+    Silence deprecation warning when using imp.reload.
+
+    https://bugzilla.gnome.org/show_bug.cgi?id=730411
+
+ configure.ac               | 2 +-
+ pygtkcompat/pygtkcompat.py | 4 +++-
+ tests/test_gi.py           | 1 -
+ tests/test_repository.py   | 2 --
+ 4 files changed, 4 insertions(+), 5 deletions(-)
+
+commit dbdc662b5743bb54fcc3621db775a6e948ec360c
+Author: Simon Feltman <sfeltman@src.gnome.org>
+Date:   Mon May 26 01:53:14 2014 -0700
+
+    tests: Don't use deprecated positional argument for Gio.Settings
+    schema
+
+ tests/test_gio.py | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+commit d0b23f08eebd4377f066a4483900fe6d09e3795e
+Author: Simon Feltman <sfeltman@src.gnome.org>
+Date:   Sun May 25 23:03:35 2014 -0700
+
+    overrides: Add Gtk.Container.child_get/set overrides
+
+    Add overrides for child_get and child_set to Gtk.Container since these
+    are not introspectable methods.
+
+    https://bugzilla.gnome.org/show_bug.cgi?id=685076
+
+ gi/overrides/Gtk.py         | 10 ++++++++++
+ tests/test_overrides_gtk.py | 16 ++++++++++++++++
+ 2 files changed, 26 insertions(+)
+
+commit 45a5fb2b0d6c7f46d355c83c73d829532e5a72ce
+Author: Simon Feltman <sfeltman@src.gnome.org>
+Date:   Sun May 25 22:07:07 2014 -0700
+
+    overrides: Make value argument to Widget.style_get_property optional
+
+    Override Gtk.Widget.style_get_property to optionally accept the
+    "value"
+    argument. If "value" is not supplied, the override will locate
+    the child
+    property value type and create the GValue. Additionally return
+    the resulting
+    GValue converted to a native Python value.
+
+    https://bugzilla.gnome.org/show_bug.cgi?id=685076
+
+ gi/overrides/Gtk.py         | 11 +++++++++++
+ tests/test_overrides_gtk.py | 29 +++++++++++++++++++++++++++++
+ 2 files changed, 40 insertions(+)
+
+commit 6f5a9a37bcdec5074332b1066396321d40b15d99
+Author: Simon Feltman <sfeltman@src.gnome.org>
+Date:   Sun May 25 21:08:47 2014 -0700
+
+    overrides: Make value argument to Container.child_get_property
+    optional
+
+    Override Gtk.Container.child_get_property to optionally accept the
+    "value"
+    argument. If "value" is not supplied, the override will locate
+    the child
+    property value type and create the GValue. Additionally return
+    the resulting
+    GValue converted to a native Python value.
+
+    https://bugzilla.gnome.org/show_bug.cgi?id=685076
+
+ gi/overrides/Gtk.py         | 11 +++++++++++
+ tests/test_overrides_gtk.py | 47
+ +++++++++++++++++++++++++++++++++++++++++++++
+ 2 files changed, 58 insertions(+)
+
+commit bf84915f89fd5fd502b4fb162eef7bc0a48c8783
+Author: Johan Dahlin <johan@gnome.org>
+Date:   Mon Oct 1 06:42:24 2012 -0700
+
+    Add GTypeClass methods as Python GObject class methods
+
+    Take all the methods from an objects type classs and add them
+    as class methods. For instance, GObject.ObjectClass.list_properties
+    is available as GObject.Object.list_properties().
+
+    Co-Authored-By: Simon Feltman <sfeltman@src.gnome.org>
+
+    https://bugzilla.gnome.org/show_bug.cgi?id=685218
+
+ gi/types.py             | 13 +++++++++++++
+ tests/test_typeclass.py | 13 +++++++++++++
+ 2 files changed, 26 insertions(+)
+
+commit 778d05c93e079ba207a250b754bda9377cb47457
+Author: Simon Feltman <sfeltman@src.gnome.org>
+Date:   Sun May 25 19:05:56 2014 -0700
+
+    Add marshalling coercion for Python classes and instances to
+    GTypeClass
+
+    Automatically marshal Python GObject classes and instances to
+    GTypeClass
+    structs (GObjectClass). This allows usage of the GTypeClass methods by
+    passing a Python GObject class or instance to the GTypeClass method.
+    This is needed to support usage of GTypeClass methods since we don't
+    manually bind GTypeClasses and they are not very well supported with
+    introspection.
+
+    https://bugzilla.gnome.org/show_bug.cgi?id=685218
+
+ gi/pygi-struct-marshal.c | 54 ++++++++++++++++++++++++++++++++++----
+ tests/Makefile.am        |  1 +
+ tests/test_typeclass.py  | 67
+ ++++++++++++++++++++++++++++++++++++++++++++++++
+ 3 files changed, 117 insertions(+), 5 deletions(-)
+
+commit 1e606287e1244cba45e3bb174d27f1c01e4f9577
+Author: Simon Feltman <sfeltman@src.gnome.org>
+Date:   Sun May 25 02:00:00 2014 -0700
+
+    Cleanup struct marshalling function names
+
+    Use a consistent naming scheme for struct marshalling cache related
+    functions. This removes prefixed underscores from function names
+    as well as redundant wording.
+
+    To ignore this commit with git blame use:
+      git blame <this-commit-sha>^ -- gi/pygi-struct-marshal.c
+
+    https://bugzilla.gnome.org/show_bug.cgi?id=685218
+
+ gi/pygi-argument.c       |  34 ++++----
+ gi/pygi-array.c          |   2 +-
+ gi/pygi-struct-marshal.c | 221
+ ++++++++++++++++++++---------------------------
+ gi/pygi-struct-marshal.h |  56 ++++++------
+ 4 files changed, 142 insertions(+), 171 deletions(-)
+
+commit bbbfa967d06eb8fdef6d6ebe705cc8df2869ddf3
+Author: Simon Feltman <sfeltman@src.gnome.org>
+Date:   Fri May 16 15:08:35 2014 -0700
+
+    Use accessors for getting and setting PyGParamSpec pointers
+
+    Add pyg_param_spec_get and pyg_param_spec_set macros for getting and
+    setting the GParamSpec pointer field held by the Python wrapper. This
+    is preliminary cleanup work for supporting fundamental types.
+
+    https://bugzilla.gnome.org/show_bug.cgi?id=631901
+
+ gi/pygi-value.c   |  2 +-
+ gi/pygobject.h    |  9 +++++++--
+ gi/pygparamspec.c | 22 +++++++++++-----------
+ 3 files changed, 19 insertions(+), 14 deletions(-)
+
+commit b49179ba3b39576c0c8fe8586b7091dbbaef8046
+Author: Simon Feltman <sfeltman@src.gnome.org>
+Date:   Fri May 16 14:50:57 2014 -0700
+
+    Use accessors for getting and setting PyGPointer fields
+
+    Add pyg_pointer_get_ptr and pyg_pointer_set_ptr macros for getting and
+    setting the pointer field. This is preliminary cleanup work for
+    supporting
+    fundamental types.
+
+    https://bugzilla.gnome.org/show_bug.cgi?id=631901
+
+ gi/gimodule.c    |  2 +-
+ gi/pygi-struct.c |  6 +++---
+ gi/pygobject.h   |  2 ++
+ gi/pygpointer.c  | 14 +++++++-------
+ 4 files changed, 13 insertions(+), 11 deletions(-)
+
+commit 92fe52243d819ffe91597744a6a1c2362a295bce
+Author: Simon Feltman <sfeltman@src.gnome.org>
+Date:   Fri May 16 14:19:47 2014 -0700
+
+    Use accessors for getting and setting PyGBoxed pointers
+
+    Add pyg_boxed_get_ptr and pyg_boxed_set_ptr macros for getting
+    and setting
+    the boxed pointer field. This is preliminary cleanup work for
+    supporting
+    fundamental types.
+
+    https://bugzilla.gnome.org/show_bug.cgi?id=631901
+
+ gi/pygboxed.c   | 20 ++++++++++----------
+ gi/pygi-boxed.c |  6 +++---
+ gi/pygobject.h  |  2 ++
+ gi/pygtype.c    |  3 ++-
+ 4 files changed, 17 insertions(+), 14 deletions(-)
+
+commit 0a4f13a571cb9bd110f435f8b23ed942e3b007b0
+Author: Simon Feltman <sfeltman@src.gnome.org>
+Date:   Sun May 11 16:04:55 2014 -0700
+
+    tests: Use assertRaises as a context manager for GError test
+
+    Simplify tests/test_error.py:TestMarshalling.test_exception so that
+    it no longer needs to pull exception information out of sys.exc_info.
+
+ tests/test_error.py | 14 ++++++--------
+ 1 file changed, 6 insertions(+), 8 deletions(-)
+
+commit bc7b0b69f651a118a053106fcae2d7c0f2173430
+Author: Andrew Grigorev <andrew@ei-grad.ru>
+Date:   Sun May 11 23:54:46 2014 +0400
+
+    Replace direct parent class call by super()
+
+    Super works, it just needs the correct class.
+
+    https://bugzilla.gnome.org/show_bug.cgi?id=729970
+
+ demos/gtk-demo/gtk-demo.py | 6 ++----
+ 1 file changed, 2 insertions(+), 4 deletions(-)
+
+commit de827d00762f2a741f90bc38f8b55518593f4509
+Author: Simon Feltman <sfeltman@src.gnome.org>
+Date:   Sun Mar 23 01:59:00 2014 -0700
+
+    Add cairo marshaling support for non-introspected signals
+
+    Add link dependency of cairo-gobject to _gi_cairo_la needed for
+    retrieving
+    the GTypes of cairo classes.
+    Add GValue marshalers for cairo Context, Surface, FontFace,
+    ScaledFont,
+    and Pattern classes.
+
+    https://bugzilla.gnome.org/show_bug.cgi?id=694604
+
+ gi/Makefile.am          |   2 +
+ gi/pygi-foreign-cairo.c | 186
+ ++++++++++++++++++++++++++++++++++++++++++++++++
+ gi/pygi-type.h          |   1 +
+ gi/pygtype.c            |   2 +
+ tests/test_cairo.py     |  65 +++++++++++++++++
+ 5 files changed, 256 insertions(+)
+
+commit 22a952ec532cc83c8227861a7d5bfa2957608c3f
+Author: Simon Feltman <sfeltman@src.gnome.org>
+Date:   Mon May 5 19:37:18 2014 -0700
+
+    [New API] Add gi.require_foreign
+
+    Add gi.require_foreign(namespace, symbol=None) API for determining
+    if a foreign marshaling module is available. This can be used in an
+    applications import statement block to verify the existence of a
+    specific foreign marshaling module (cairo).
+    Additionally it forces loading of the foreign marshaling module as
+    well as the GI repository module. This allows non-introspected signal
+    closures to correctly marshal their arguments (bug 694604).
+
+    https://bugzilla.gnome.org/show_bug.cgi?id=707735
+
+ gi/__init__.py      | 28 +++++++++++++++++++++++++
+ gi/gimodule.c       |  2 ++
+ gi/pygi-foreign.c   | 60
+ ++++++++++++++++++++++++++++++++++++++++++++++-------
+ gi/pygi-foreign.h   |  4 ++++
+ tests/test_cairo.py |  9 ++++++++
+ 5 files changed, 95 insertions(+), 8 deletions(-)
+
+commit 4ee91a4cd0018d069c7aaf66d83e2f8235f2262a
+Author: Simon Feltman <sfeltman@src.gnome.org>
+Date:   Mon May 5 19:48:06 2014 -0700
+
+    tests: Move cairo tests into test_cairo.py
+
+    Move cairo related tests from test_everything.py into test_cairo.py
+
+    https://bugzilla.gnome.org/show_bug.cgi?id=694604
+
+ tests/Makefile.am        |  1 +
+ tests/test_cairo.py      | 67
+ ++++++++++++++++++++++++++++++++++++++++++++++++
+ tests/test_everything.py | 43 +------------------------------
+ 3 files changed, 69 insertions(+), 42 deletions(-)
+
+commit 31ecd935564984068e6646676392122bdc03e42e
+Author: Simon Feltman <sfeltman@src.gnome.org>
+Date:   Mon May 5 19:42:59 2014 -0700
+
+    Initialize the foreign API at PyGI load time
+
+    Initialize the foreign struct list at gi._gi module load time. This
+    ensures
+    we always have a valid (non-null) list of foreign marshalers outside
+    of the
+    context of marshaling.
+
+    https://bugzilla.gnome.org/show_bug.cgi?id=694604
+
+ gi/gimodule.c     |  3 ++-
+ gi/pygi-foreign.c | 12 ++++++++----
+ gi/pygi-foreign.h |  2 ++
+ 3 files changed, 12 insertions(+), 5 deletions(-)
+
+commit def47144b63a1492ebf47a4eadb535f45253ff3a
+Author: Simon Feltman <sfeltman@src.gnome.org>
+Date:   Sat Mar 22 14:13:01 2014 -0700
+
+    Move pygi foreign API into pygi-foreign-api.h
+
+    Move limited set of APIs necessary for registering foreign marshalers
+    into
+    pygi-foreign-api.h. Remove "_real" from internally used APIs and
+    add necessary
+    includes to the rest of pygobject for calling directly (instead of
+    going through
+    the PyCapsule API within PyGI itself).
+    This is needed to avoid compilation errors when including pygobject.h
+    in
+    foreign marshaling plugins which conflicts with pygobject-private.h.
+
+    https://bugzilla.gnome.org/show_bug.cgi?id=694604
+
+ gi/Makefile.am           |   1 +
+ gi/gimodule.c            |   6 +--
+ gi/pygboxed.c            |   1 +
+ gi/pygenum.c             |   1 +
+ gi/pygflags.c            |   1 +
+ gi/pygi-foreign-api.h    |  85 +++++++++++++++++++++++++++++++++++++
+ gi/pygi-foreign-cairo.c  |   8 ++--
+ gi/pygi-foreign.c        |  10 ++---
+ gi/pygi-foreign.h        |  14 +++----
+ gi/pygi-property.c       |   8 ++--
+ gi/pygi-property.h       |  14 ++++---
+ gi/pygi-signal-closure.c |  12 +++---
+ gi/pygi-signal-closure.h |  15 +++----
+ gi/pygi-type.c           |   4 +-
+ gi/pygi-type.h           |   2 +-
+ gi/pygi.h                | 107
+ -----------------------------------------------
+ gi/pygobject.c           |   3 ++
+ gi/pygpointer.c          |   1 +
+ 18 files changed, 139 insertions(+), 154 deletions(-)
+
+commit 4c2e6914bf0277ebc3a6a4426f33a1b378a04b00
+Author: Simon Feltman <sfeltman@src.gnome.org>
+Date:   Sun May 4 23:19:30 2014 -0700
+
+    Clobber GLib.Error with custom implementation
+
+    Clobber the introspection GLib.Error class with the custom Python
+    implementation found in gi._error.GError. Update references to
+    GLib.GError
+    to use GLib.Error.
+
+    https://bugzilla.gnome.org/show_bug.cgi?id=712519
+
+ gi/_error.py         |  3 ++-
+ gi/overrides/GLib.py |  9 ++++++---
+ gi/pygi-error.c      | 10 +++++-----
+ tests/test_error.py  | 24 ++++++++++++------------
+ 4 files changed, 25 insertions(+), 21 deletions(-)
+
+commit f80f5ec434ed868ab1f35d6a81537384e753b09d
+Author: Simon Feltman <sfeltman@src.gnome.org>
+Date:   Sun May 4 23:43:50 2014 -0700
+
+    Simplify pygi_error_marshal to use GError initializer arguments
+
+    https://bugzilla.gnome.org/show_bug.cgi?id=712519
+
+ gi/pygi-error.c | 25 ++++++-------------------
+ 1 file changed, 6 insertions(+), 19 deletions(-)
+
+commit 3083daf420ac1900bb20604c22fd61e5187b4ae8
+Author: Simon Feltman <sfeltman@src.gnome.org>
+Date:   Sun May 4 04:13:46 2014 -0700
+
+    Add Python implementation of GError
+
+    Add internally used gi/_error.py module as a basis for implementing
+    a unified GError between introspection and static bindings. Patch
+    Python
+    implementations of GError.matches and GError.new_literal in the GLib
+    overrides
+
+    https://bugzilla.gnome.org/show_bug.cgi?id=712519
+
+ Makefile.am          |  3 ++-
+ gi/_error.py         | 53
+ ++++++++++++++++++++++++++++++++++++++++++++++++++++
+ gi/_option.py        |  3 ++-
+ gi/overrides/GLib.py | 25 ++++++++++++++++++++++++-
+ gi/pygi-error.c      | 18 +++++++-----------
+ tests/test_error.py  | 37 ++++++++++++++++++++++++++++++++++++
+ 6 files changed, 125 insertions(+), 14 deletions(-)
+
+commit 664bfa6fdf2196a0d1449baaca62a9a496121f67
+Author: Simon Feltman <sfeltman@src.gnome.org>
+Date:   Sun May 4 23:14:27 2014 -0700
+
+    tests: Move GError tests into test_error.py
+
+    https://bugzilla.gnome.org/show_bug.cgi?id=712519
+
+ tests/Makefile.am   |  1 +
+ tests/test_error.py | 81
+ +++++++++++++++++++++++++++++++++++++++++++++++++++++
+ tests/test_gi.py    | 49 --------------------------------
+ 3 files changed, 82 insertions(+), 49 deletions(-)
+
+commit 649895d83a90cd3a370da215a6f98a606b987419
+Author: Simon Feltman <sfeltman@src.gnome.org>
+Date:   Sun May 4 00:18:41 2014 -0700
+
+    Consolidate GError related code into pygi-error
+
+    Rename all pyglib_error_* functions to pygi_error_* and move them into
+    pygi-error.[h|c].
+    Register GError as part of the gi._gi module instead of gi._gi._glib.
+    Update all code to use new naming.
+
+    https://bugzilla.gnome.org/show_bug.cgi?id=712519
+
+ gi/_option.py          |   6 +-
+ gi/gimodule.c          |   4 +-
+ gi/glibmodule.c        |  19 -----
+ gi/gobjectmodule.c     |  54 +-----------
+ gi/overrides/GLib.py   |   3 +-
+ gi/pygi-argument.c     |   6 +-
+ gi/pygi-cache.c        |   4 +-
+ gi/pygi-error.c        | 222
+ ++++++++++++++++++++++++++++++++++++++++++++++++-
+ gi/pygi-error.h        |  21 ++++-
+ gi/pygi-invoke.c       |   5 +-
+ gi/pyglib-private.h    |   1 -
+ gi/pyglib.c            | 199 --------------------------------------------
+ gi/pyglib.h            |   5 --
+ gi/pygobject-private.h |   3 -
+ gi/pygoptioncontext.c  |   3 +-
+ gi/pygoptiongroup.c    |   3 +-
+ gi/pygspawn.c          |   3 +-
+ 17 files changed, 262 insertions(+), 299 deletions(-)
+
+commit 9080215e862a73ddcce16476f4dc4492a88dd3f2
+Author: Simon Feltman <sfeltman@src.gnome.org>
+Date:   Sat May 3 22:56:49 2014 -0700
+
+    Add gi.CallableInfo.can_throw_gerror()
+
+    Add static binding for g_callable_info_can_throw_gerror.
+
+ gi/pygi-info.c           | 10 ++++++++++
+ tests/test_repository.py | 16 ++++++++++++++++
+ 2 files changed, 26 insertions(+)
+
+commit f129e78d579b7897cb86111c524d87b5b12019ad
+Author: Simon Feltman <sfeltman@src.gnome.org>
+Date:   Sat May 3 22:56:03 2014 -0700
+
+    Derive PyCallbackInfo from PyCallableInfo
+
+    Update the static GI bindings for PyGICallbackInfo to derive
+    from PyGICallableInfo. This makes all the gi.CallableInfo methods
+    available to gi.CallbackInfo for use from Python.
+
+ gi/pygi-info.c           | 4 ++--
+ tests/test_repository.py | 7 +++++++
+ 2 files changed, 9 insertions(+), 2 deletions(-)
+
+commit 833f96807037e85445ac103d6fb6ad9c4fab65e4
+Author: Simon Feltman <sfeltman@src.gnome.org>
+Date:   Fri May 2 21:36:25 2014 -0700
+
+    PEP8 fixes
+
+    Use infix 'not' instead of prefixed.
+    Don't use double comments (##).
+    Use space between comment and text.
+    Un-comment tests that now work.
+    Move broken (and won't fix) implicit int64 signal tests into
+    a new skipped test function.
+
+ gi/overrides/GIMarshallingTests.py |  4 ++--
+ gi/overrides/Gio.py                |  4 ++--
+ gi/overrides/Gtk.py                |  6 +++---
+ gi/types.py                        |  2 +-
+ pygtkcompat/pygtkcompat.py         |  4 ++--
+ tests/test_everything.py           |  1 -
+ tests/test_gi.py                   |  9 +++------
+ tests/test_iochannel.py            |  2 +-
+ tests/test_option.py               |  2 +-
+ tests/test_signal.py               | 28 +++++++++++++---------------
+ 10 files changed, 28 insertions(+), 34 deletions(-)
+
+commit 07af141dd8dcac551cb2e962f6bf338b3485006b
+Author: Simon Feltman <sfeltman@src.gnome.org>
+Date:   Mon Apr 28 14:06:30 2014 -0700
+
+    configure.ac: post release version bump to 3.13.2
+
+ configure.ac | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+commit ba652c1fd9dbef6d3ff57e39b400ea827374a95e
+Author: Simon Feltman <sfeltman@src.gnome.org>
+Date:   Mon Apr 28 14:00:59 2014 -0700
+
+    release 3.13.1
+
+ NEWS | 14 ++++++++++++++
+ 1 file changed, 14 insertions(+)
+
+commit 3a2bfc8bf01fcae386355bc3652780e198e54d49
+Author: Christoph Reiter <reiter.christoph@gmail.com>
+Date:   Mon Apr 14 23:33:52 2014 +0200
+
+    Raise TypeError if arguments are passed to Boxed.__init__
+
+    This is a partial revert of
+    https://git.gnome.org/browse/pygobject/commit/?id=2f2069c9efcd8
+    which removed a type check in __new__. This adds it back
+    into __init__. Overrides which define __new__ now have to
+    filter out any arguments in __init__ and not the other way
+    around, which is a bit less surprising in the common case.
+
+    https://bugzilla.gnome.org/show_bug.cgi?id=727810
+
+ gi/overrides/GLib.py  | 6 ++++++
+ gi/overrides/Gtk.py   | 6 ++++++
+ gi/overrides/Pango.py | 3 +++
+ gi/pygi-boxed.c       | 6 ++++++
+ tests/test_gi.py      | 4 ++++
+ 5 files changed, 25 insertions(+)
+
+commit 906977047df2fb2f394410e4ebf360b69af8dcfe
+Author: Christoph Reiter <reiter.christoph@gmail.com>
+Date:   Mon Apr 14 15:40:50 2014 +0200
+
+    Gdk.Event: Override __setattr__ to set fields based on the event type
+
+    Pass the setting of attributes through to the underlying union based
+    on event type. This mirrors the logic in __getattr__.
+
+    https://bugzilla.gnome.org/show_bug.cgi?id=727810
+
+ gi/overrides/Gdk.py         |  7 +++++++
+ tests/test_overrides_gdk.py | 13 ++++++++++---
+ 2 files changed, 17 insertions(+), 3 deletions(-)
+
+commit 78a0508a4d40e3723b36297ba2d42889dabc1cdd
+Author: Christoph Reiter <reiter.christoph@gmail.com>
+Date:   Mon Apr 14 13:06:02 2014 +0200
+
+    Gdk.Event: Include GdkEventType in __repr__
+
+    https://bugzilla.gnome.org/show_bug.cgi?id=727810
+
+ gi/overrides/Gdk.py         | 4 ++++
+ tests/test_overrides_gdk.py | 4 ++++
+ 2 files changed, 8 insertions(+)
+
+commit 23965455f060793ffcbc0d8288527d41a667579c
 Author: Simon Feltman <sfeltman@src.gnome.org>
 Date:   Mon Apr 14 15:10:01 2014 -0700
 
-    Fix crash with type checking invalid GObject arguments
+    Fix crash with type checking for GObject arguments
 
     Ensure we have a valid GObject before attempting to call g_type_is_a.
     Swap conditional blocks to make if condition more readable.
@@ -13,7 +2185,7 @@ Date:   Mon Apr 14 15:10:01 2014 -0700
  tests/test_object_marshaling.py | 35 +++++++++++++++++++++++++++++++++++
  2 files changed, 45 insertions(+), 9 deletions(-)
 
-commit 22951466aee024f6199963a4f300b36c8e61c418
+commit 2e853f6a31636d6a26ce91eb30be5bb0326474b1
 Author: Paolo Borelli <pborelli@gnome.org>
 Date:   Sun Mar 30 18:27:59 2014 +0200
 
@@ -22,14 +2194,92 @@ Date:   Sun Mar 30 18:27:59 2014 +0200
  gi/pygi-closure.c | 11 ++++++-----
  1 file changed, 6 insertions(+), 5 deletions(-)
 
-commit db797ce5b4fb81bff10434fe66ad627dfdd4e762
+commit f9e504c79c5ef6e1938e4db5b49115689b9f5c3c
 Author: Simon Feltman <sfeltman@src.gnome.org>
-Date:   Mon Mar 24 04:27:51 2014 -0700
+Date:   Fri Mar 28 19:51:58 2014 -0700
 
-    configure.ac: post release version bump to 3.12.1
+    configure.ac: Update PyGObject wiki link in AC_INIT
 
  configure.ac | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
+
+commit ee84b5a2c83d88436aec6b62e7a271a3525569e0
+Author: Simon Feltman <sfeltman@src.gnome.org>
+Date:   Mon Mar 24 18:57:56 2014 -0700
+
+    Ignore GValueArray deprecations
+
+    Wrap calls to GValueArray related calls with
+    G_GNUC_BEGIN/END_IGNORE_DEPRECATIONS.
+    Although GValueArray is deprecated, we still need to support the
+    marshaling of
+    them in PyGObject. The deprecations add noise to the build processes
+    in which
+    new warnings could be lost. Essentially losing the element of surprise
+    a new
+    warning should have on maintainers.
+
+ gi/pygi-value.c          | 23 ++++++++++++++++++++---
+ tests/testhelpermodule.c |  3 +++
+ 2 files changed, 23 insertions(+), 3 deletions(-)
+
+commit ac8b59ee335967efef974ab0aa89128ade9f3d0c
+Author: Simon Feltman <sfeltman@src.gnome.org>
+Date:   Mon Mar 24 18:09:10 2014 -0700
+
+    Raise ImportError when importing modules not found in repository
+
+    Raise an ImportError with extra information noting the typelib was not
+    found. This removes the need to log a similar message which adds
+    output
+    noise when attempting controlled imports within try/except statements.
+    In Python 2, the additional information is lost but in Python 3 it
+    shows up.
+
+    https://bugzilla.gnome.org/show_bug.cgi?id=726877
+
+ gi/importer.py                 |  9 ++++-----
+ tests/test_import_machinery.py | 18 ++++++++++++++++++
+ 2 files changed, 22 insertions(+), 5 deletions(-)
+
+commit e604ada06a8ef8f9a06f0638cf183cfeacdc63a9
+Author: Simon Feltman <sfeltman@src.gnome.org>
+Date:   Mon Mar 24 18:04:27 2014 -0700
+
+    tests: Rename test_overrides to test_import_machinery
+
+    Rename this test to better suit the contents of the file. This
+    also gives
+    us a more concise location to grow other tests related to import
+    machinery
+    internals.
+
+    https://bugzilla.gnome.org/show_bug.cgi?id=726877
+
+ tests/Makefile.am              |  2 +-
+ tests/test_import_machinery.py | 58
+ ++++++++++++++++++++++++++++++++++++++++++
+ tests/test_overrides.py        | 58
+ ------------------------------------------
+ 3 files changed, 59 insertions(+), 59 deletions(-)
+
+commit a863e5ec0ac27de49a0ae261fd3a78745cfe84a0
+Author: Simon Feltman <sfeltman@src.gnome.org>
+Date:   Mon Mar 24 04:39:47 2014 -0700
+
+    HACKING: Update branch creation instructions to include -b
+
+ HACKING | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+commit 1012cfd58c1d41dd6b040a2d14f395e5578f5e79
+Author: Simon Feltman <sfeltman@src.gnome.org>
+Date:   Mon Mar 24 04:35:52 2014 -0700
+
+    configure.ac: post release version bump to 3.13.1
+
+ configure.ac | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
 commit 45eda91eac2f6c8ab1a5c38808f96de760196e90
 Author: Simon Feltman <sfeltman@src.gnome.org>
