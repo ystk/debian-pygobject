@@ -34,12 +34,18 @@ PyObject *
 pygi_arg_gobject_to_py               (GIArgument        *arg,
                                       GITransfer         transfer);
 
+PyObject *
+pygi_arg_gobject_to_py_called_from_c (GIArgument        *arg,
+                                      GITransfer         transfer);
+
+
 PyGIArgCache *
 pygi_arg_gobject_new_from_info       (GITypeInfo        *type_info,
                                       GIArgInfo         *arg_info,   /* may be null */
                                       GITransfer         transfer,
                                       PyGIDirection      direction,
-                                      GIInterfaceInfo   *iface_info);
+                                      GIInterfaceInfo   *iface_info,
+                                      PyGICallableCache *callable_cache);
 
 G_END_DECLS
 

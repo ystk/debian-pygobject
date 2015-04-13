@@ -40,7 +40,9 @@ __all__.append('option')
 
 # Types and functions still needed from static bindings
 from gi._gi import _glib
-GError = _glib.GError
+from gi._error import GError
+
+Error = GError
 OptionContext = _glib.OptionContext
 OptionGroup = _glib.OptionGroup
 Pid = _glib.Pid
@@ -52,7 +54,30 @@ def threads_init():
                   'See: https://wiki.gnome.org/PyGObject/Threading',
                   PyGIDeprecationWarning, stacklevel=2)
 
-__all__ += ['GError', 'OptionContext', 'OptionGroup', 'Pid',
+
+def gerror_matches(self, domain, code):
+    # Handle cases where self.domain was set to an integer for compatibility
+    # with the introspected GLib.Error.
+    if isinstance(self.domain, str):
+        self_domain_quark = GLib.quark_from_string(self.domain)
+    else:
+        self_domain_quark = self.domain
+    return (self_domain_quark, self.code) == (domain, code)
+
+
+def gerror_new_literal(domain, message, code):
+    domain_quark = GLib.quark_to_string(domain)
+    return GError(message, domain_quark, code)
+
+
+# Monkey patch methods that rely on GLib introspection to be loaded at runtime.
+Error.__name__ = 'Error'
+Error.__module__ = 'GLib'
+Error.matches = gerror_matches
+Error.new_literal = staticmethod(gerror_new_literal)
+
+
+__all__ += ['GError', 'Error', 'OptionContext', 'OptionGroup', 'Pid',
             'spawn_async', 'threads_init']
 
 
@@ -547,9 +572,8 @@ class Source(GLib.Source):
         setattr(source, '__pygi_custom_source', True)
         return source
 
-    def __del__(self):
-        if hasattr(self, '__pygi_custom_source'):
-            self.unref()
+    def __init__(self, *args, **kwargs):
+        return super(Source, self).__init__()
 
     def set_callback(self, fn, user_data=None):
         if hasattr(self, '__pygi_custom_source'):
@@ -709,6 +733,9 @@ class IOChannel(GLib.IOChannel):
         if hwnd is not None:
             return GLib.IOChannel.win32_new_fd(hwnd)
         raise TypeError('either a valid file descriptor, file name, or window handle must be supplied')
+
+    def __init__(self, *args, **kwargs):
+        return super(IOChannel, self).__init__()
 
     def read(self, max_count=-1):
         return io_channel_read(self, max_count)

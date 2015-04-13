@@ -25,6 +25,7 @@
 #include "pygi-array.h"
 #include "pygi-private.h"
 #include "pygi-marshal-cleanup.h"
+#include "pygi-basictype.h"
 
 /* Needed for _pygi_marshal_cleanup_from_py_interface_struct_gvalue hack */
 #include "pygi-struct-marshal.h"
@@ -454,7 +455,7 @@ _pygi_marshal_cleanup_from_py_array (PyGIInvokeState *state,
                      * allocated in _pygi_marshal_from_py_array(), so we must
                      * not try to deallocate it as a slice and thus
                      * short-circuit cleanup_func. */
-                    if (cleanup_func == _pygi_marshal_cleanup_from_py_interface_struct_gvalue) {
+                    if (cleanup_func == pygi_arg_gvalue_from_py_cleanup) {
                         g_value_unset ((GValue*) item);
                         continue;
                     }
@@ -761,10 +762,8 @@ pygi_arg_garray_len_arg_setup (PyGIArgCache *arg_cache,
         seq_cache->len_arg_index = g_type_info_get_array_length (type_info);
 
         /* offset by self arg for methods and vfuncs */
-        if (seq_cache->len_arg_index >= 0 && callable_cache != NULL &&
-                (callable_cache->function_type == PYGI_FUNCTION_TYPE_METHOD ||
-                 callable_cache->function_type == PYGI_FUNCTION_TYPE_VFUNC)) {
-            seq_cache->len_arg_index += 1;
+        if (seq_cache->len_arg_index >= 0 && callable_cache != NULL) {
+            seq_cache->len_arg_index += callable_cache->args_offset;
         }
     }
 
@@ -802,8 +801,9 @@ pygi_arg_garray_len_arg_setup (PyGIArgCache *arg_cache,
 
         child_cache->meta_type = PYGI_META_ARG_TYPE_CHILD;
         child_cache->direction = direction;
-        child_cache->to_py_marshaller = NULL;
-        child_cache->from_py_marshaller = NULL;
+        child_cache->to_py_marshaller = _pygi_marshal_to_py_basic_type_cache_adapter;
+        child_cache->from_py_marshaller = _pygi_marshal_from_py_basic_type_cache_adapter;
+        child_cache->py_arg_index = -1;
 
         /* ugly edge case code:
          *
@@ -833,11 +833,12 @@ pygi_arg_garray_len_arg_setup (PyGIArgCache *arg_cache,
 }
 
 static gboolean
-pygi_arg_garray_setup (PyGIArgGArray      *sc,
-                       GITypeInfo         *type_info,
-                       GIArgInfo          *arg_info,    /* may be NULL for return arguments */
-                       GITransfer          transfer,
-                       PyGIDirection       direction)
+pygi_arg_garray_setup (PyGIArgGArray     *sc,
+                       GITypeInfo        *type_info,
+                       GIArgInfo         *arg_info,    /* may be NULL for return arguments */
+                       GITransfer         transfer,
+                       PyGIDirection      direction,
+                       PyGICallableCache *callable_cache)
 {
     GITypeInfo *item_type_info;
     PyGIArgCache *arg_cache = (PyGIArgCache *)sc;
@@ -846,7 +847,8 @@ pygi_arg_garray_setup (PyGIArgGArray      *sc,
                                   type_info,
                                   arg_info,
                                   transfer,
-                                  direction)) {
+                                  direction,
+                                  callable_cache)) {
         return FALSE;
     }
 
@@ -877,7 +879,8 @@ PyGIArgCache *
 pygi_arg_garray_new_from_info (GITypeInfo *type_info,
                                GIArgInfo *arg_info,
                                GITransfer transfer,
-                               PyGIDirection direction)
+                               PyGIDirection direction,
+                               PyGICallableCache *callable_cache)
 {
     PyGIArgGArray *array_cache = g_slice_new0 (PyGIArgGArray);
     if (array_cache == NULL)
@@ -887,7 +890,8 @@ pygi_arg_garray_new_from_info (GITypeInfo *type_info,
                                 type_info,
                                 arg_info,
                                 transfer,
-                                direction)) {
+                                direction,
+                                callable_cache)) {
         pygi_arg_cache_free ( (PyGIArgCache *)array_cache);
         return NULL;
     }

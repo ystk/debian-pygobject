@@ -27,6 +27,8 @@
 #include "pygi-private.h"
 #include "pygi.h"
 #include "pyglib.h"
+#include "pygi-error.h"
+#include "pygi-foreign.h"
 
 #include <pyglib-python-compat.h>
 
@@ -494,10 +496,11 @@ _wrap_pyg_variant_new_tuple (PyObject *self, PyObject *args)
             return NULL;
         }
 
-        values[i] = (GVariant *) ( (PyGPointer *) value)->pointer;
+        values[i] = pyg_pointer_get (value, GVariant);
     }
 
     variant = g_variant_new_tuple (values, PyTuple_Size (py_values));
+    g_variant_ref_sink (variant);
 
     py_variant = _pygi_struct_new ( (PyTypeObject *) py_type, variant, FALSE);
 
@@ -518,7 +521,11 @@ _wrap_pyg_variant_type_from_string (PyObject *self, PyObject *args)
 
     py_type = _pygi_type_import_by_name ("GLib", "VariantType");
 
-    py_variant = _pygi_boxed_new ( (PyTypeObject *) py_type, type_string, FALSE, 0);
+    /* Pass the string directly and force a boxed copy. This works because
+     * GVariantType is just a char pointer. */
+    py_variant = _pygi_boxed_new ( (PyTypeObject *) py_type, type_string,
+                                   TRUE, /* copy_boxed */
+                                   0);   /* slice_allocated */
 
     return py_variant;
 }
@@ -584,7 +591,7 @@ pyg_channel_read(PyObject* self, PyObject *args, PyObject *kwargs)
         status = g_io_channel_read_chars (iochannel, buf, buf_size, &single_read, &error);
         Py_END_ALLOW_THREADS;
 
-        if (pyglib_error_check(&error))
+        if (pygi_error_check (&error))
 	    goto failure;
 	
 	total_read += single_read;
@@ -615,15 +622,12 @@ static PyMethodDef _gi_functions[] = {
     { "source_new", (PyCFunction) _wrap_pyg_source_new, METH_NOARGS },
     { "source_set_callback", (PyCFunction) pyg_source_set_callback, METH_VARARGS },
     { "io_channel_read", (PyCFunction) pyg_channel_read, METH_VARARGS },
+    { "require_foreign", (PyCFunction) pygi_require_foreign, METH_VARARGS | METH_KEYWORDS },
     { NULL, NULL, 0 }
 };
 
 static struct PyGI_API CAPI = {
-  pygi_type_import_by_g_type_real,
-  pygi_get_property_value_real,
-  pygi_set_property_value_real,
-  pygi_signal_closure_new_real,
-  pygi_register_foreign_struct_real,
+  pygi_register_foreign_struct,
 };
 
 PYGLIB_MODULE_START(_gi, "_gi")
@@ -664,12 +668,14 @@ PYGLIB_MODULE_START(_gi, "_gi")
     PyModule_AddObject (module, "_gobject", _gobject_module);
     PyModule_AddStringConstant(module, "__package__", "gi._gi");
 
+    pygi_foreign_init ();
+    pygi_error_register_types (module);
     _pygi_repository_register_types (module);
     _pygi_info_register_types (module);
     _pygi_struct_register_types (module);
     _pygi_boxed_register_types (module);
     _pygi_ccallback_register_types (module);
-    _pygi_argument_init();
+    _pygi_argument_init ();
 
     /* Use RuntimeWarning as the base class of PyGIDeprecationWarning
      * for unstable (odd minor version) and use DeprecationWarning for

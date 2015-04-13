@@ -216,6 +216,9 @@ class Value(GObjectModule.Value):
         if self._free_on_dealloc and self.g_type != TYPE_INVALID:
             self.unset()
 
+        # We must call base class __del__() after unset.
+        super(Value, self).__del__()
+
     def set_boxed(self, boxed):
         # Workaround the introspection marshalers inability to know
         # these methods should be marshaling boxed types. This is because
@@ -393,31 +396,34 @@ def signal_lookup(name, type_):
 __all__.append('signal_lookup')
 
 
-def signal_query(id_or_name, type_=None):
-    SignalQuery = namedtuple('SignalQuery',
-                             ['signal_id',
-                              'signal_name',
-                              'itype',
-                              'signal_flags',
-                              'return_type',
-                              # n_params',
-                              'param_types'])
+SignalQuery = namedtuple('SignalQuery',
+                         ['signal_id',
+                          'signal_name',
+                          'itype',
+                          'signal_flags',
+                          'return_type',
+                          # n_params',
+                          'param_types'])
 
-    # signal_query needs to use a static method until the following bugs are fixed:
-    # https://bugzilla.gnome.org/show_bug.cgi?id=687550
-    # https://bugzilla.gnome.org/show_bug.cgi?id=687545
-    # https://bugzilla.gnome.org/show_bug.cgi?id=687541
+
+def signal_query(id_or_name, type_=None):
     if type_ is not None:
         id_or_name = signal_lookup(id_or_name, type_)
 
-    res = _gobject.signal_query(id_or_name)
+    res = GObjectModule.signal_query(id_or_name)
     if res is None:
         return None
 
-    # Return a named tuple which allows indexing like the static bindings
-    # along with field like access of the gi struct.
-    # Note however that the n_params was not returned from the static bindings.
-    return SignalQuery(*res)
+    if res.signal_id == 0:
+        return None
+
+    # Return a named tuple to allows indexing which is compatible with the
+    # static bindings along with field like access of the gi struct.
+    # Note however that the n_params was not returned from the static bindings
+    # so we must skip over it.
+    return SignalQuery(res.signal_id, res.signal_name, res.itype,
+                       res.signal_flags, res.return_type,
+                       tuple(res.param_types))
 
 __all__.append('signal_query')
 
@@ -608,6 +614,43 @@ class Object(GObjectModule.Object):
         """
         super(Object, self).freeze_notify()
         return _FreezeNotifyManager(self)
+
+    def connect_data(self, detailed_signal, handler, *data, **kwargs):
+        """Connect a callback to the given signal with optional user data.
+
+        :param str detailed_signal:
+            A detailed signal to connect to.
+        :param callable handler:
+            Callback handler to connect to the signal.
+        :param *data:
+            Variable data which is passed through to the signal handler.
+        :param GObject.ConnectFlags connect_flags:
+            Flags used for connection options.
+        :returns:
+            A signal id which can be used with disconnect.
+        """
+        flags = kwargs.get('connect_flags', 0)
+        if flags & GObjectModule.ConnectFlags.AFTER:
+            connect_func = _gobject.GObject.connect_after
+        else:
+            connect_func = _gobject.GObject.connect
+
+        if flags & GObjectModule.ConnectFlags.SWAPPED:
+            if len(data) != 1:
+                raise ValueError('Using GObject.ConnectFlags.SWAPPED requires exactly '
+                                 'one argument for user data, got: %s' % [data])
+
+            def new_handler(obj, *args):
+                # Swap obj with the last element in args which will be the user
+                # data passed to the connect function.
+                args = list(args)
+                swap = args.pop()
+                args = args + [obj]
+                return handler(swap, *args)
+        else:
+            new_handler = handler
+
+        return connect_func(self, detailed_signal, new_handler, *data)
 
     #
     # Aliases

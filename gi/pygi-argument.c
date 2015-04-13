@@ -33,12 +33,12 @@
 #include "pygi-basictype.h"
 #include "pygi-object.h"
 #include "pygi-struct-marshal.h"
+#include "pygi-error.h"
 
-
-static gboolean
-gi_argument_to_gssize (GIArgument *arg_in,
-                       GITypeTag  type_tag,
-                       gssize *gssize_out)
+gboolean
+pygi_argument_to_gssize (GIArgument *arg_in,
+                         GITypeTag  type_tag,
+                         gssize *gssize_out)
 {
     switch (type_tag) {
       case GI_TYPE_TAG_INT8:
@@ -758,16 +758,49 @@ check_number_release:
     return retval;
 }
 
+
+/**
+ * _pygi_argument_array_length_marshal:
+ * @length_arg_index: Index of length argument in the callables args list.
+ * @user_data1: (type Array(GValue)): Array of GValue arguments to retrieve length
+ * @user_data2: (type GICallableInfo): Callable info to get the argument from.
+ *
+ * Generic marshalling policy for array length arguments in callables.
+ *
+ * Returns: The length of the array or -1 on failure.
+ */
+gssize
+_pygi_argument_array_length_marshal (gsize length_arg_index,
+                                     void *user_data1,
+                                     void *user_data2)
+{
+    GIArgInfo length_arg_info;
+    GITypeInfo length_type_info;
+    GIArgument length_arg;
+    gssize array_len = -1;
+    GValue *values = (GValue *)user_data1;
+    GICallableInfo *callable_info = (GICallableInfo *)user_data2;
+
+    g_callable_info_load_arg (callable_info, length_arg_index, &length_arg_info);
+    g_arg_info_load_type (&length_arg_info, &length_type_info);
+
+    length_arg = _pygi_argument_from_g_value (&(values[length_arg_index]),
+                                              &length_type_info);
+    if (!pygi_argument_to_gssize (&length_arg,
+                                  g_type_info_get_tag (&length_type_info),
+                                  &array_len)) {
+        return -1;
+    }
+
+    return array_len;
+}
+
 /**
  * _pygi_argument_to_array
  * @arg: The argument to convert
- * @args: Arguments to method invocation, possibly contaning the array length.
- *        Set to %NULL if this is not for a method call or @args_values is
- *        specified.
- * @args_values: GValue Arguments to method invocation, possibly contaning the
- *               array length. Set to %NULL if this is not for a method call or
- *               @args is specified.
- * @callable_info: Info on the callable, if this a method call; otherwise %NULL
+ * @array_length_policy: Closure for marshalling the array length argument when needed.
+ * @user_data1: Generic user data passed to the array_length_policy.
+ * @user_data2: Generic user data passed to the array_length_policy.
  * @type_info: The type info for @arg
  * @out_free_array: A return location for a gboolean that indicates whether
  *                  or not the wrapped GArray should be freed
@@ -784,9 +817,9 @@ check_number_release:
  */
 GArray *
 _pygi_argument_to_array (GIArgument  *arg,
-                         GIArgument  *args[],
-                         const GValue *args_values,
-                         GICallableInfo *callable_info,                  
+                         PyGIArgArrayLengthPolicy array_length_policy,
+                         void        *user_data1,
+                         void        *user_data2,
                          GITypeInfo  *type_info,
                          gboolean    *out_free_array)
 {
@@ -817,10 +850,8 @@ _pygi_argument_to_array (GIArgument  *arg,
                 length = g_type_info_get_array_fixed_size (type_info);
                 if (length < 0) {
                     gint length_arg_pos;
-                    GIArgInfo length_arg_info;
-                    GITypeInfo length_type_info;
 
-                    if (G_UNLIKELY (args == NULL && args_values == NULL)) {
+                    if (G_UNLIKELY (array_length_policy == NULL)) {
                         g_critical ("Unable to determine array length for %p",
                                     arg->v_pointer);
                         g_array = g_array_new (is_zero_terminated, FALSE, item_size);
@@ -830,23 +861,10 @@ _pygi_argument_to_array (GIArgument  *arg,
 
                     length_arg_pos = g_type_info_get_array_length (type_info);
                     g_assert (length_arg_pos >= 0);
-                    g_assert (callable_info);
-                    g_callable_info_load_arg (callable_info, length_arg_pos, &length_arg_info);
-                    g_arg_info_load_type (&length_arg_info, &length_type_info);
 
-                    if (args != NULL) {
-                        if (!gi_argument_to_gssize (args[length_arg_pos],
-                                                    g_type_info_get_tag (&length_type_info),
-                                                    &length))
-                            return NULL;
-                    } else {
-                        /* get it from args_values */
-                        GIArgument length_arg = _pygi_argument_from_g_value (&(args_values[length_arg_pos]),
-                                &length_type_info);
-                        if (!gi_argument_to_gssize (&length_arg,
-                                                    g_type_info_get_tag (&length_type_info),
-                                                    &length))
-                            return NULL;
+                    length = array_length_policy (length_arg_pos, user_data1, user_data2);
+                    if (length < 0) {
+                        return NULL;
                     }
                 }
             }
@@ -1018,6 +1036,8 @@ array_success:
                 {
                     GType g_type;
                     PyObject *py_type;
+                    gboolean is_foreign = (info_type == GI_INFO_TYPE_STRUCT) &&
+                                          (g_struct_info_is_foreign ((GIStructInfo *) info));
 
                     g_type = g_registered_type_info_get_g_type ( (GIRegisteredTypeInfo *) info);
                     py_type = _pygi_type_import_by_gi_info ( (GIBaseInfo *) info);
@@ -1029,16 +1049,16 @@ array_success:
                      * Further re-factoring is needed to fix this leak.
                      * See: https://bugzilla.gnome.org/show_bug.cgi?id=693405
                      */
-                    _pygi_marshal_from_py_interface_struct (object,
-                                                            &arg,
-                                                            NULL, /*arg_name*/
-                                                            info, /*interface_info*/
-                                                            g_type,
-                                                            py_type,
-                                                            transfer,
-                                                            FALSE, /*copy_reference*/
-                                                            g_struct_info_is_foreign (info),
-                                                            g_type_info_is_pointer (type_info));
+                    pygi_arg_struct_from_py_marshal (object,
+                                                     &arg,
+                                                     NULL, /*arg_name*/
+                                                     info, /*interface_info*/
+                                                     g_type,
+                                                     py_type,
+                                                     transfer,
+                                                     FALSE, /*copy_reference*/
+                                                     is_foreign,
+                                                     g_type_info_is_pointer (type_info));
 
                     Py_DECREF (py_type);
                     break;
@@ -1364,6 +1384,8 @@ _pygi_argument_to_object (GIArgument  *arg,
                 {
                     PyObject *py_type;
                     GType g_type = g_registered_type_info_get_g_type ( (GIRegisteredTypeInfo *) info);
+                    gboolean is_foreign = (info_type == GI_INFO_TYPE_STRUCT) &&
+                                          (g_struct_info_is_foreign ((GIStructInfo *) info));
 
                     /* Special case variant and none to force loading from py module. */
                     if (g_type == G_TYPE_VARIANT || g_type == G_TYPE_NONE) {
@@ -1372,13 +1394,13 @@ _pygi_argument_to_object (GIArgument  *arg,
                         py_type = _pygi_type_get_from_g_type (g_type);
                     }
 
-                    object = _pygi_marshal_to_py_interface_struct (arg,
-                                                                   info, /*interface_info*/
-                                                                   g_type,
-                                                                   py_type,
-                                                                   transfer,
-                                                                   FALSE, /*is_allocated*/
-                                                                   g_struct_info_is_foreign (info));
+                    object = pygi_arg_struct_to_py_marshal (arg,
+                                                            info, /*interface_info*/
+                                                            g_type,
+                                                            py_type,
+                                                            transfer,
+                                                            FALSE, /*is_allocated*/
+                                                            is_foreign);
 
                     Py_XDECREF (py_type);
                     break;
@@ -1420,26 +1442,7 @@ _pygi_argument_to_object (GIArgument  *arg,
                 }
                 case GI_INFO_TYPE_INTERFACE:
                 case GI_INFO_TYPE_OBJECT:
-                    /* HACK:
-                     * The following hack is to work around GTK+ sending signals which
-                     * contain floating widgets in them. This assumes control of how
-                     * references are added by the PyGObject wrapper and avoids the sink
-                     * behavior by explicitly passing GI_TRANSFER_EVERYTHING as the transfer
-                     * mode and then re-forcing the object as floating afterwards.
-                     *
-                     * This can be deleted once the following ticket is fixed:
-                     * https://bugzilla.gnome.org/show_bug.cgi?id=693400
-                     */
-                    if (arg->v_pointer &&
-                            !G_IS_PARAM_SPEC (arg->v_pointer) &&
-                            transfer == GI_TRANSFER_NOTHING &&
-                            g_object_is_floating (arg->v_pointer)) {
-                        g_object_ref (arg->v_pointer);
-                        object = pygi_arg_gobject_to_py (arg, GI_TRANSFER_EVERYTHING);
-                        g_object_force_floating (arg->v_pointer);
-                    } else {
-                        object = pygi_arg_gobject_to_py (arg, transfer);
-                    }
+                    object = pygi_arg_gobject_to_py_called_from_c (arg, transfer);
 
                     break;
                 default:
@@ -1558,12 +1561,12 @@ _pygi_argument_to_object (GIArgument  *arg,
             GError *error = (GError *) arg->v_pointer;
             if (error != NULL && transfer == GI_TRANSFER_NOTHING) {
                 /* If we have not been transferred the ownership we must copy
-                 * the error, because pyglib_error_check() is going to free it.
+                 * the error, because pygi_error_check() is going to free it.
                  */
                 error = g_error_copy (error);
             }
 
-            if (pyglib_error_check (&error)) {
+            if (pygi_error_check (&error)) {
                 PyObject *err_type;
                 PyObject *err_value;
                 PyObject *err_trace;
@@ -1704,7 +1707,8 @@ _pygi_argument_release (GIArgument   *arg,
                         if (direction == GI_DIRECTION_IN && transfer == GI_TRANSFER_NOTHING) {
                             g_closure_unref (arg->v_pointer);
                         }
-                    } else if (g_struct_info_is_foreign ( (GIStructInfo*) info)) {
+                    } else if (info_type == GI_INFO_TYPE_STRUCT &&
+                               g_struct_info_is_foreign ((GIStructInfo*) info)) {
                         if (direction == GI_DIRECTION_OUT && transfer == GI_TRANSFER_EVERYTHING) {
                             pygi_struct_foreign_release (info, arg->v_pointer);
                         }

@@ -26,13 +26,20 @@ __path__ = extend_path(__path__, __name__)
 
 import sys
 import os
+import importlib
+import types
+
+_static_binding_error = ('When using gi.repository you must not import static '
+                         'modules like "gobject". Please change all occurrences '
+                         'of "import gobject" to "from gi.repository import GObject". '
+                         'See: https://bugzilla.gnome.org/show_bug.cgi?id=709183')
 
 # we can't have pygobject 2 loaded at the same time we load the internal _gobject
 if 'gobject' in sys.modules:
-    raise ImportError('When using gi.repository you must not import static '
-                      'modules like "gobject". Please change all occurrences '
-                      'of "import gobject" to "from gi.repository import GObject".')
+    raise ImportError(_static_binding_error)
 
+
+from . import _gi
 from ._gi import _gobject
 from ._gi import _API
 from ._gi import Repository
@@ -46,6 +53,20 @@ _overridesdir = os.path.join(os.path.dirname(__file__), 'overrides')
 
 version_info = _gobject.pygobject_version[:]
 __version__ = "{0}.{1}.{2}".format(*version_info)
+
+
+class _DummyStaticModule(types.ModuleType):
+    __path__ = None
+
+    def __getattr__(self, name):
+        raise AttributeError(_static_binding_error)
+
+
+sys.modules['glib'] = _DummyStaticModule('glib', _static_binding_error)
+sys.modules['gobject'] = _DummyStaticModule('gobject', _static_binding_error)
+sys.modules['gio'] = _DummyStaticModule('gio', _static_binding_error)
+sys.modules['gtk'] = _DummyStaticModule('gtk', _static_binding_error)
+sys.modules['gtk.gdk'] = _DummyStaticModule('gtk.gdk', _static_binding_error)
 
 
 def check_version(version):
@@ -87,3 +108,29 @@ def require_version(namespace, version):
 
 def get_required_version(namespace):
     return _versions.get(namespace, None)
+
+
+def require_foreign(namespace, symbol=None):
+    """Ensure the given foreign marshaling module is available and loaded.
+
+    :param str namespace:
+        Introspection namespace of the foreign module (e.g. "cairo")
+    :param symbol:
+        Optional symbol typename to ensure a converter exists.
+    :type symbol: str or None
+    :raises: ImportError
+
+    :Example:
+
+    .. code-block:: python
+
+        import gi
+        import cairo
+        gi.require_foreign('cairo')
+
+    """
+    try:
+        _gi.require_foreign(namespace, symbol)
+    except Exception as e:
+        raise ImportError(str(e))
+    importlib.import_module('gi.repository', namespace)

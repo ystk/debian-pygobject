@@ -21,12 +21,13 @@
 #define __PYGI_TYPE_H__
 
 #include <Python.h>
+#include <girepository.h>
 
 G_BEGIN_DECLS
 
 /* Public */
 
-PyObject *pygi_type_import_by_g_type_real (GType g_type);
+PyObject *pygi_type_import_by_g_type (GType g_type);
 
 
 /* Private */

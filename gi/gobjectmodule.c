@@ -37,6 +37,8 @@
 #include "pygoptiongroup.h"
 
 #include "pygi-value.h"
+#include "pygi-error.h"
+#include "pygi-property.h"
 
 static GHashTable *log_handlers = NULL;
 static gboolean log_handlers_disabled = FALSE;
@@ -193,7 +195,6 @@ pyg_object_get_property (GObject *object, guint property_id,
 			 GValue *value, GParamSpec *pspec)
 {
     PyObject *object_wrapper, *retval;
-    PyObject *py_pspec;
     PyGILState_STATE state;
 
     state = pyglib_gil_state_ensure();
@@ -205,14 +206,11 @@ pyg_object_get_property (GObject *object, guint property_id,
 	return;
     }
 
-    py_pspec = pyg_param_spec_new(pspec);
-    retval = PyObject_CallMethod(object_wrapper, "do_get_property",
-				 "O", py_pspec);
-    if (retval == NULL || pyg_value_from_pyobject(value, retval) < 0) {
-	PyErr_Print();
+    retval = pygi_call_do_get_property (object_wrapper, pspec);
+    if (retval && pyg_value_from_pyobject (value, retval) < 0) {
+        PyErr_Print();
     }
     Py_DECREF(object_wrapper);
-    Py_DECREF(py_pspec);
     Py_XDECREF(retval);
 
     pyglib_gil_state_release(state);
@@ -1281,93 +1279,6 @@ pyg_signal_new(PyObject *self, PyObject *args)
 }
 
 static PyObject *
-pyg_signal_query (PyObject *self, PyObject *args, PyObject *kwargs)
-{
-    static char *kwlist1[] = { "name", "type", NULL };
-    static char *kwlist2[] = { "signal_id", NULL };
-    PyObject *py_query, *params_list, *py_itype;
-    GObjectClass *class = NULL;
-    GType itype;
-    gchar *signal_name;
-    guint i;
-    GSignalQuery query;
-    guint id;
-    gpointer iface = NULL;
-
-    if (PyArg_ParseTupleAndKeywords(args, kwargs, "sO:gobject.signal_query",
-                                     kwlist1, &signal_name, &py_itype)) {
-        if ((itype = pyg_type_from_object(py_itype)) == 0)
-            return NULL;
-
-        if (G_TYPE_IS_INSTANTIATABLE(itype)) {
-            class = g_type_class_ref(itype);
-            if (!class) {
-                PyErr_SetString(PyExc_RuntimeError,
-                                "could not get a reference to type class");
-                return NULL;
-            }
-        } else if (!G_TYPE_IS_INTERFACE(itype)) {
-            PyErr_SetString(PyExc_TypeError,
-                            "type must be instantiable or an interface");
-            return NULL;
-        } else {
-            iface = g_type_default_interface_ref(itype);
-        }
-        id = g_signal_lookup(signal_name, itype);
-    } else {
-	PyErr_Clear();
-        if (!PyArg_ParseTupleAndKeywords(args, kwargs,
-                                         "i:gobject.signal_query",
-                                         kwlist2, &id)) {
-            PyErr_Clear();
-            PyErr_SetString(PyExc_TypeError,
-                            "Usage: one of:\n"
-                            "  gobject.signal_query(name, type)\n"
-                            "  gobject.signal_query(signal_id)");
-
-	return NULL;
-        }
-    }
-
-    g_signal_query(id, &query);
-
-    if (query.signal_id == 0) {
-        Py_INCREF(Py_None);
-        py_query = Py_None;
-        goto done;
-    }
-    py_query = PyTuple_New(6);
-    if (py_query == NULL) {
-        goto done;
-    }
-    params_list = PyTuple_New(query.n_params);
-    if (params_list == NULL) {
-        Py_DECREF(py_query);
-        py_query = NULL;
-        goto done;
-    }
-
-    PyTuple_SET_ITEM(py_query, 0, PYGLIB_PyLong_FromLong(query.signal_id));
-    PyTuple_SET_ITEM(py_query, 1, PYGLIB_PyUnicode_FromString(query.signal_name));
-    PyTuple_SET_ITEM(py_query, 2, pyg_type_wrapper_new(query.itype));
-    PyTuple_SET_ITEM(py_query, 3, PYGLIB_PyLong_FromLong(query.signal_flags));
-    PyTuple_SET_ITEM(py_query, 4, pyg_type_wrapper_new(query.return_type));
-    for (i = 0; i < query.n_params; i++) {
-        PyTuple_SET_ITEM(params_list, i,
-                         pyg_type_wrapper_new(query.param_types[i]));
-    }
-    PyTuple_SET_ITEM(py_query, 5, params_list);
-
- done:
-    if (class)
-        g_type_class_unref(class);
-    if (iface)
-        g_type_default_interface_unref(iface);
-
-    return py_query;
-}
-
-static PyObject *
 pyg_object_class_list_properties (PyObject *self, PyObject *args)
 {
     GParamSpec **specs;
@@ -1692,8 +1603,6 @@ static PyMethodDef _gobject_functions[] = {
     { "type_is_a", pyg_type_is_a, METH_VARARGS },
     { "type_register", _wrap_pyg_type_register, METH_VARARGS },
     { "signal_new", pyg_signal_new, METH_VARARGS },
-    { "signal_query",
-      (PyCFunction)pyg_signal_query, METH_VARARGS|METH_KEYWORDS },
     { "list_properties",
       pyg_object_class_list_properties, METH_VARARGS },
     { "new",
@@ -1831,55 +1740,6 @@ pyg_flags_add_constants(PyObject *module, GType flags_type,
     }
 
     g_type_class_unref(fclass);
-}
-
-/**
- * pyg_error_check:
- * @error: a pointer to the GError.
- *
- * Checks to see if the GError has been set.  If the error has been
- * set, then the gobject.GError Python exception will be raised, and
- * the GError cleared.
- *
- * Returns: True if an error was set.
- *
- * Deprecated: Since 2.16, use pyglib_error_check instead.
- */
-gboolean
-pyg_error_check(GError **error)
-{
-#if 0
-    if (PyErr_Warn(PyExc_DeprecationWarning,
-		   "pyg_error_check is deprecated, use "
-		   "pyglib_error_check instead"))
-        return NULL;
-#endif
-    return pyglib_error_check(error);
-}
-
-/**
- * pyg_gerror_exception_check:
- * @error: a standard GLib GError ** output parameter
- *
- * Checks to see if a GError exception has been raised, and if so
- * translates the python exception to a standard GLib GError.  If the
- * raised exception is not a GError then PyErr_Print() is called.
- *
- * Returns: 0 if no exception has been raised, -1 if it is a
- * valid gobject.GError, -2 otherwise.
- *
- * Deprecated: Since 2.16, use pyglib_gerror_exception_check instead.
- */
-gboolean
-pyg_gerror_exception_check(GError **error)
-{
-#if 0
-    if (PyErr_Warn(PyExc_DeprecationWarning,
-		   "pyg_gerror_exception_check is deprecated, use "
-		   "pyglib_gerror_exception_check instead"))
-        return NULL;
-#endif
-    return pyglib_gerror_exception_check(error);
 }
 
 /**
@@ -2055,7 +1915,7 @@ struct _PyGObject_Functions pygobject_api_functions = {
 
   pyg_constant_strip_prefix,
 
-  pyg_error_check,
+  pygi_error_check,
 
   _pyg_set_thread_block_funcs,
   (PyGThreadBlockFunc)0, /* block_threads */
@@ -2098,7 +1958,7 @@ struct _PyGObject_Functions pygobject_api_functions = {
 
   NULL, /* previously type_register_custom */
 
-  pyg_gerror_exception_check,
+  pygi_gerror_exception_check,
 
   pyg_option_group_new,
   pyg_type_from_object_strict,

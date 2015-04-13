@@ -72,6 +72,49 @@ def _construct_target_list(targets):
 __all__.append('_construct_target_list')
 
 
+def _extract_handler_and_args(obj_or_map, handler_name):
+    handler = None
+    if isinstance(obj_or_map, collections.Mapping):
+        handler = obj_or_map.get(handler_name, None)
+    else:
+        handler = getattr(obj_or_map, handler_name, None)
+
+    if handler is None:
+        raise AttributeError('Handler %s not found' % handler_name)
+
+    args = ()
+    if isinstance(handler, collections.Sequence):
+        if len(handler) == 0:
+            raise TypeError("Handler %s tuple can not be empty" % handler)
+        args = handler[1:]
+        handler = handler[0]
+
+    elif not _callable(handler):
+        raise TypeError('Handler %s is not a method, function or tuple' % handler)
+
+    return handler, args
+
+
+# Exposed for unit-testing.
+__all__.append('_extract_handler_and_args')
+
+
+def _builder_connect_callback(builder, gobj, signal_name, handler_name, connect_obj, flags, obj_or_map):
+    handler, args = _extract_handler_and_args(obj_or_map, handler_name)
+
+    after = flags & GObject.ConnectFlags.AFTER
+    if connect_obj is not None:
+        if after:
+            gobj.connect_object_after(signal_name, handler, connect_obj, *args)
+        else:
+            gobj.connect_object(signal_name, handler, connect_obj, *args)
+    else:
+        if after:
+            gobj.connect_after(signal_name, handler, *args)
+        else:
+            gobj.connect(signal_name, handler, *args)
+
+
 class Widget(Gtk.Widget):
 
     translate_coordinates = strip_boolean_result(Gtk.Widget.translate_coordinates)
@@ -85,6 +128,17 @@ class Widget(Gtk.Widget):
         if (target_list is not None) and (not isinstance(target_list, Gtk.TargetList)):
             target_list = Gtk.TargetList.new(_construct_target_list(target_list))
         super(Widget, self).drag_source_set_target_list(target_list)
+
+    def style_get_property(self, property_name, value=None):
+        if value is None:
+            prop = self.find_style_property(property_name)
+            if prop is None:
+                raise ValueError('Class "%s" does not contain style property "%s"' %
+                                 (self, property_name))
+            value = GObject.Value(prop.value_type)
+
+        Gtk.Widget.style_get_property(self, property_name, value)
+        return value.get_value()
 
 
 Widget = override(Widget)
@@ -109,6 +163,27 @@ class Container(Gtk.Container, Widget):
     __nonzero__ = __bool__
 
     get_focus_chain = strip_boolean_result(Gtk.Container.get_focus_chain)
+
+    def child_get_property(self, child, property_name, value=None):
+        if value is None:
+            prop = self.find_child_property(property_name)
+            if prop is None:
+                raise ValueError('Class "%s" does not contain child property "%s"' %
+                                 (self, property_name))
+            value = GObject.Value(prop.value_type)
+
+        Gtk.Container.child_get_property(self, child, property_name, value)
+        return value.get_value()
+
+    def child_get(self, child, *prop_names):
+        """Returns a list of child property values for the given names."""
+        return [self.child_get_property(child, name) for name in prop_names]
+
+    def child_set(self, child, **kwargs):
+        """Set a child properties on the given child to key/value pairs."""
+        for name, value in kwargs.items():
+            name = name.replace('_', '-')
+            self.child_set_property(child, name, value)
 
 
 Container = override(Container)
@@ -364,29 +439,6 @@ __all__.append('MenuItem')
 
 
 class Builder(Gtk.Builder):
-    @staticmethod
-    def _extract_handler_and_args(obj_or_map, handler_name):
-        handler = None
-        if isinstance(obj_or_map, collections.Mapping):
-            handler = obj_or_map.get(handler_name, None)
-        else:
-            handler = getattr(obj_or_map, handler_name, None)
-
-        if handler is None:
-            raise AttributeError('Handler %s not found' % handler_name)
-
-        args = ()
-        if isinstance(handler, collections.Sequence):
-            if len(handler) == 0:
-                raise TypeError("Handler %s tuple can not be empty" % handler)
-            args = handler[1:]
-            handler = handler[0]
-
-        elif not _callable(handler):
-            raise TypeError('Handler %s is not a method, function or tuple' % handler)
-
-        return handler, args
-
     def connect_signals(self, obj_or_map):
         """Connect signals specified by this builder to a name, handler mapping.
 
@@ -399,22 +451,7 @@ class Builder(Gtk.Builder):
 
             builder.connect_signals({'on_clicked': (on_clicked, arg1, arg2)})
         """
-        def _full_callback(builder, gobj, signal_name, handler_name, connect_obj, flags, obj_or_map):
-            handler, args = self._extract_handler_and_args(obj_or_map, handler_name)
-
-            after = flags & GObject.ConnectFlags.AFTER
-            if connect_obj is not None:
-                if after:
-                    gobj.connect_object_after(signal_name, handler, connect_obj, *args)
-                else:
-                    gobj.connect_object(signal_name, handler, connect_obj, *args)
-            else:
-                if after:
-                    gobj.connect_after(signal_name, handler, *args)
-                else:
-                    gobj.connect(signal_name, handler, *args)
-
-        self.connect_signals_full(_full_callback, obj_or_map)
+        self.connect_signals_full(_builder_connect_callback, obj_or_map)
 
     def add_from_string(self, buffer):
         if not isinstance(buffer, _basestring):
@@ -1115,17 +1152,20 @@ class TreePath(Gtk.TreePath):
         except TypeError:
             raise TypeError("could not parse subscript '%s' as a tree path" % path)
 
+    def __init__(self, *args, **kwargs):
+        super(TreePath, self).__init__()
+
     def __str__(self):
         return self.to_string()
 
     def __lt__(self, other):
-        return not other is None and self.compare(other) < 0
+        return other is not None and self.compare(other) < 0
 
     def __le__(self, other):
-        return not other is None and self.compare(other) <= 0
+        return other is not None and self.compare(other) <= 0
 
     def __eq__(self, other):
-        return not other is None and self.compare(other) == 0
+        return other is not None and self.compare(other) == 0
 
     def __ne__(self, other):
         return other is None or self.compare(other) != 0
@@ -1465,6 +1505,9 @@ class IconSet(Gtk.IconSet):
         else:
             iconset = Gtk.IconSet.__new__(cls)
         return iconset
+
+    def __init__(self, *args, **kwargs):
+        return super(IconSet, self).__init__()
 
 IconSet = override(IconSet)
 __all__.append('IconSet')

@@ -1,7 +1,107 @@
-3.12.1  14-Apr-2014
-        - Fix crash with type checking invalid GObject arguments
-          (Simon Feltman) (#727604)
+3.14.0  22-Sep-2014
+        - configure.ac: pre release version bump to 3.14.0 (Simon Feltman)
+
+3.13.92 15-Sep-2014
+        - tests: Add test for Gio.Application.add_main_option() (Simon Feltman)
+        - tests: Split up various test cases (Simon Feltman) (#735193)
+        - Fix invalid read error in argument cleanup code (Simon Feltman)
+        - Fix memory management problems with struct arguments to signals
+          (Simon Feltman) (#736175)
+
+3.13.91 01-Sep-2014
+        - docs: Fix return types in auto-generated doc strings (Simon Feltman)
+        - Special case signal output arguments which are structs as
+          pass-by-reference (Simon Feltman) (#735486)
+        - Ignore closure callbacks when Python is not initialized
+          (Simon Feltman) (#722562)
+        - Change boxed init with args to warn instead of raise
+          (Christoph Reiter) (#727810)
+        - Fix crash in GList/GSList marshaling error handling path.
+          (Christoph Reiter) (#735201)
+        - Fix reference counting problems with GLib.Variant.new_tuple()
+          (Simon Feltman) (#735166)
+        - Skip marshalling NULL output arguments in Python closures
+          (Simon Feltman) (#735090)
+
+3.13.90 18-Aug-2014
+        - Support array lengths on struct fields (Simon Feltman) (#688792)
+        - Fast path Python property get access (Simon Feltman) (#723872)
+        - Unify accessing properties through props and get_property()
+          (Simon Feltman) (#726999)
+        - Refactor boxed wrapper memory management strategy
+          (Simon Feltman) (#726999)
+        - Replace GObject.signal_query with introspected version
+          (Simon Feltman) (#688792)
+        - Fix memory leak with unboxed caller allocated structs (Simon Feltman)
+        - tests: Add failing tests for GObject sub-class doc-strings
+          (Piotr Iwaniuk) (#731452)
+        - Don't mask GObject sub-class doc strings in meta-class
+          (Tobias Mueller) (#731452)
+
+3.13.4  14-Aug-2014
+        - Marshaling cache refactor and cache usage in vfuncs
+          (Garrett Regier) (#727004)
+        - Fix array argument out and inout marshaling from vfuncs
+          (Garrett Regier) (#702508)
+        - Cleanup input args when marshaling in closures
+          (Garrett Regier) (#727004)
+        - Add deprecation warning for connect_object() with non-GObject argument
+          (Simon Feltman) (#688064)
+        - Add Python implementation of Object.connect_data()
+          (Simon Feltman) (#701843)
+        - Add GClosure marshaling cleanup (Simon Feltman) (#695128)
+        - Fix GCallback Python wrapper leak (Simon Feltman) (#695130)
+        - tests: Add failing test for marshaling an array of GValues through
+          signals (Martin Pitt) (#669496)
+        - Add protection against attempts at importing static bindings
+          (Simon Feltman) (#709183)
+        - Update and deprecate gi.overrides.keysyms (Simon Feltman) (#721295)
+        - Generate .dll libraries on windows (Ignacio Casal Quinteiro) (#734288)
+        - Windows build fixes (Alexey Pavlov)
+          (#734284, #734289, #734286, #734287)
+
+3.13.3  23-Jun-2014
+        - demos: Cleanup CSS accordion demo to use a loop for adding buttons
+          (Simon Feltman)
+        - refactor: Move builder connection utilities outside of Builder class
+          (Simon Feltman) (#701843)
+        - tests: Move TestSignals from test_everything into test_signal
+          (Simon Feltman) (#701843)
+
+3.13.2  26-May-2014
+        - Python 3.4 make check fixes (Simon Feltman) (#730411)
+        - overrides: Add Gtk.Container.child_get/set overrides (Simon Feltman)
+          (#685076)
+        - overrides: Make value argument to Widget.style_get_property optional
+          (Simon Feltman) (#685076)
+        - overrides: Make value argument to Container.child_get_property optional
+          (Simon Feltman) (#685076)
+        - Add GTypeClass methods as Python GObject class methods
+          (Johan Dahlin) (#685218)
+        - Add marshalling coercion for Python classes and instances to GTypeClass
+          (Simon Feltman) (#685218)
+        - Replace direct parent class call by super() (Andrew Grigorev) (#729970)
+        - Add cairo marshaling support for non-introspected signals
+          (Simon Feltman) (#694604)
+        - [New API] Add gi.require_foreign (Simon Feltman) (#707735)
+        - Initialize the foreign API at PyGI load time (Simon Feltman) (#694604)
+        - Move pygi foreign API into pygi-foreign-api.h (Simon Feltman) (#694604)
+        - Unify GLib.GError and GLib.Error (Simon Feltman) (#712519)
+        - PEP8 fixes (Simon Feltman)
+
+3.13.1  28-Apr-2014
+        - Raise TypeError if arguments are passed to Boxed.__init__
+          (Christoph Reiter) (#727810)
+        - Gdk.Event: Override __setattr__ to set fields based on the event type
+          (Christoph Reiter) (#727810)
+        - Gdk.Event: Include GdkEventType in __repr__ (Christoph Reiter) (#727810)
+        - Fix crash with type checking for GObject arguments (Simon Feltman) (#727604)
         - Do not leak info of destroy notify (Paolo Borelli)
+        - Ignore GValueArray deprecations (Simon Feltman)
+        - Raise ImportError when importing modules not found in repository
+          (Simon Feltman) (#726877)
+        - tests: Rename test_overrides to test_import_machinery
+          (Simon Feltman) (#726877)
 
 3.12.0  24-Mar-2014
 
